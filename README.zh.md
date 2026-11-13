@@ -8,7 +8,7 @@
 
 ![发现页列出 OMA 的三个插件](docs/discover.png)
 
-*发现页会列出这三个插件包；截图中的配置文件已经用本地链接安装了它们，所以卡片显示「已安装」。*
+*发现页会列出索引中的插件包；截图中的配置文件已经用本地链接安装了其中几个，所以对应卡片显示「已安装」。*
 
 ## 收录的插件
 
@@ -17,6 +17,8 @@
 | [`dsh-story-board`](plugins/dsh-story-board/) | 0.2.0 | 产品、项目、看板与用户故事，内置创建、导入与移动故事的 Agent 工具。 |
 | [`skill-gate`](plugins/skill-gate/) | 0.1.0 | 按会话控制技能可见性：在输入框下方选择模型本次可用的技能。 |
 | [`dsh-subagent-pi`](plugins/dsh-subagent-pi/) | 0.3.0 | 把 [Pi](https://github.com/earendil-works/pi-coding-agent) 编码智能体作为隔离子智能体运行，基于 Pi RPC 支持会话续接。 |
+| [`dsh-info-system-builder`](plugins/dsh-info-system-builder/) | 1.0.0 | 一句话生成可运行的内部信息系统：AI 需求蓝图、可视化向导与确定性渲染器。 |
+| [`dsh-ppt`](plugins/dsh-ppt/) | 0.20.5 | 给出材料，拿到可交付的演示文稿：技能加工具，生成 HTML 放映并导出 PPTX。 |
 
 ## 添加索引
 
@@ -46,7 +48,7 @@ git+https://github.com/wyf0931/oma-dsh-plugin-index.git#<commit>&path:/plugins/d
 
 - 安装固定到提交，之后 `main` 上的改动不会影响已安装的版本。
 - 不需要 npm 包；pnpm 会克隆本仓库并安装对应的子目录。
-- 只有当插件声明了安装脚本时才会请求构建批准。这三个包都直接携带构建产物，没有安装脚本。
+- 只有当插件声明了安装脚本时才会请求构建批准。这些包都直接携带构建产物，没有安装脚本。
 - 升级方式是先移除旧版本，再安装新版本（DSH 目前只提示可更新，不支持原地升级）。
 - 如果你已经用本地目录（`link:`）安装了同名插件，发现页会显示已安装。想换成索引里的固定版本，需要先移除本地链接。
 
@@ -89,6 +91,7 @@ npm run check
 ## 说明
 
 - 索引内容是 DSH 的第三方输入。安装前请阅读插件源码；索引只描述固定提交里有什么。
+- `dsh-info-system-builder` 在本索引里以该名字重新发布。它的上游包名是仅限本地的 `@local/info-system-builder`；仓库内的副本改了名，避免公共索引安装一个 `@local` 包。
 - 索引不签名。提交固定保证可复现，不证明作者身份；在意来源时请查看仓库提交历史。
 - 本仓库的插件均为 MIT 许可。
 

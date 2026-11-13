@@ -5,8 +5,8 @@
       "zh": "OMA DSH 插件索引"
     },
     "description": {
-      "en": "Custom DeepSeek Harness bundles from OMA: skill gating, user story boards, and the Pi subagent.",
-      "zh": "OMA 出品的 DeepSeek Harness 自定义插件：技能门控、用户故事看板与 Pi 子智能体。"
+      "en": "Custom DeepSeek Harness bundles from OMA: story boards, skill gating, the Pi subagent, info systems, and presentations.",
+      "zh": "OMA 出品的 DeepSeek Harness 自定义插件：用户故事看板、技能门控、Pi 子智能体、信息系统与演示文稿。"
     }
   },
   "categories": {
@@ -48,7 +48,10 @@
       "dir": "plugins/dsh-story-board",
       "order": 1,
       "category": "workflow",
-      "labels": ["ui", "tools"],
+      "labels": [
+        "ui",
+        "tools"
+      ],
       "icon": "icon.svg",
       "author": "wyf0931",
       "title": {
@@ -64,7 +67,9 @@
       "dir": "plugins/skill-gate",
       "order": 2,
       "category": "skills",
-      "labels": ["ui"],
+      "labels": [
+        "ui"
+      ],
       "icon": "icon.svg",
       "author": "wyf0931",
       "title": {
@@ -80,7 +85,10 @@
       "dir": "plugins/dsh-subagent-pi",
       "order": 3,
       "category": "agents",
-      "labels": ["ui", "tools"],
+      "labels": [
+        "ui",
+        "tools"
+      ],
       "icon": "icon.svg",
       "author": "dsh-pi contributors",
       "title": {
@@ -90,6 +98,44 @@
       "description": {
         "en": "Run the Pi coding agent as an isolated subagent, with resumable sessions over Pi RPC.",
         "zh": "把 Pi 编码智能体作为隔离子智能体运行，基于 Pi RPC 支持会话续接。"
+      }
+    },
+    {
+      "dir": "plugins/dsh-info-system-builder",
+      "order": 4,
+      "category": "workflow",
+      "labels": [
+        "ui",
+        "tools"
+      ],
+      "icon": "icon.svg",
+      "author": "wyf0931",
+      "title": {
+        "en": "Info System Builder",
+        "zh": "信息系统生成器"
+      },
+      "description": {
+        "en": "Turn one sentence into a running internal information system: AI blueprinting, a visual wizard, and a deterministic renderer.",
+        "zh": "一句话生成可运行的内部信息系统：AI 需求蓝图、可视化向导与确定性渲染器。"
+      }
+    },
+    {
+      "dir": "plugins/dsh-ppt",
+      "order": 5,
+      "category": "workflow",
+      "labels": [
+        "ui",
+        "tools"
+      ],
+      "icon": "assets/plugin-icon.webp",
+      "author": "stardustlc",
+      "title": {
+        "en": "PPT",
+        "zh": "演示文稿"
+      },
+      "description": {
+        "en": "Turn source material into a deliverable presentation: a skill plus tools that build HTML decks and export PPTX.",
+        "zh": "给出材料，拿到可交付的演示文稿：技能加工具，生成 HTML 放映并导出 PPTX。"
       }
     }
   ]

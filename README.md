@@ -8,7 +8,7 @@ The index is self-contained. Every plugin's source is vendored under [`plugins/`
 
 ![Discover listing the three OMA plugins](docs/discover.png)
 
-*Discover lists all three bundles; this profile already links them locally, so each card reads 已安装 (installed).*
+*Discover lists the indexed bundles; this profile already links some of them locally, so those cards read 已安装 (installed).*
 
 ## Plugins
 
@@ -17,6 +17,8 @@ The index is self-contained. Every plugin's source is vendored under [`plugins/`
 | [`dsh-story-board`](plugins/dsh-story-board/) | 0.2.0 | Products, projects, boards, and user stories, with agent tools that create, import, and move them. |
 | [`skill-gate`](plugins/skill-gate/) | 0.1.0 | Per-session skill visibility: choose which skills the model can see from a control under the composer. |
 | [`dsh-subagent-pi`](plugins/dsh-subagent-pi/) | 0.3.0 | Run the [Pi](https://github.com/earendil-works/pi-coding-agent) coding agent as an isolated subagent, with resumable sessions over Pi RPC. |
+| [`dsh-info-system-builder`](plugins/dsh-info-system-builder/) | 1.0.0 | Turn one sentence into a running internal information system: AI blueprinting, a visual wizard, and a deterministic renderer. |
+| [`dsh-ppt`](plugins/dsh-ppt/) | 0.20.5 | Turn source material into a deliverable presentation: a skill plus tools that build HTML decks and export PPTX. |
 
 ## Add the index
 
@@ -46,7 +48,7 @@ git+https://github.com/wyf0931/oma-dsh-plugin-index.git#<commit>&path:/plugins/d
 
 - Installs are pinned to a commit, so a later change on `main` cannot alter what you installed.
 - No npm package is required; pnpm clones this repository and installs the package directory.
-- The first install asks for build-script approval only if the package declares one. These three packages ship built files and declare no install scripts.
+- The first install asks for build-script approval only if the package declares one. These packages ship built files and declare no install scripts.
 - To upgrade, remove the installed bundle and install the newer version (DSH currently reports updates but does not upgrade in place).
 - If you already run a plugin from a local checkout, Discover shows it as installed for that package name. Remove the local link before installing the index version if you want the pinned copy.
 
@@ -89,6 +91,7 @@ This runs DSH's own `parseMarketIndex` (from `@deepseek-ai/dsh-plugin-market-ind
 ## Notes
 
 - Index content is third-party input to DSH. Read a plugin's source before installing it; the index only describes what the pinned commit contains.
+- `dsh-info-system-builder` is republished here under that name. Its upstream package name is the local-only `@local/info-system-builder`; the vendored copy renames it so the public index never installs a `@local` package.
 - The index is intentionally unsigned. The commit pin gives reproducibility, not authorship; check the repository history if provenance matters.
 - All plugins here are MIT licensed.
 

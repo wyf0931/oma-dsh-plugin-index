@@ -1,0 +1,214 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import {
+  THEMES,
+  THEME_IDS,
+  buildDeck,
+  buildPptx,
+  buildThemePreview,
+  renderThemePreviewHtml,
+  renderThemeSvg,
+  listThemes,
+  parseMarkdownDeck,
+  renderHtml,
+  resolveLanguage,
+  resolveTheme,
+  sanitizeFileName,
+} from '../skills/dsh-ppt/scripts/deck-core.mjs'
+
+test('内置 5 套主题，id 与名称齐全', () => {
+  assert.equal(THEME_IDS.length, 5)
+  for (const id of THEME_IDS) {
+    const theme = THEMES[id]
+    assert.ok(theme.palette.bg)
+    assert.ok(theme.palette.fg)
+    assert.ok(theme.palette.accent)
+    assert.ok(theme.name.zh)
+    assert.ok(theme.name.en)
+    assert.equal(theme.id, id)
+  }
+  assert.equal(listThemes('zh').length, 5)
+  assert.equal(listThemes('en')[0].name, 'Swiss Pulse')
+})
+
+test('resolveTheme 与 resolveLanguage 中文报错', () => {
+  assert.equal(resolveTheme('swiss').id, 'swiss')
+  assert.throws(() => resolveTheme('neon'), /未知主题/)
+  assert.throws(() => resolveTheme('neon'), /swiss/)
+  assert.equal(resolveLanguage('bilingual').id, 'bilingual')
+  assert.throws(() => resolveLanguage('fr'), /未知语言/)
+})
+
+test('一句话生成最小完整结构：封面 + 核心观点 + 结束页', () => {
+  const deck = parseMarkdownDeck('一句话产品发布', '我们的产品让会议减少一半。', 'zh')
+  assert.equal(deck.slides.length, 3)
+  assert.equal(deck.slides[0].layout, 'cover')
+  assert.equal(deck.slides[1].layout, 'statement')
+  assert.equal(deck.slides[2].layout, 'closing')
+  assert.equal(deck.slides[0].subtitle, '我们的产品让会议减少一半。')
+})
+
+test('首个 H1 下只有列表时不丢弃封面之外的要点', () => {
+  const deck = parseMarkdownDeck('', '# 标题\n- 一\n- 二\n- 三', 'zh')
+  assert.equal(deck.title, '标题')
+  assert.equal(deck.slides[0].layout, 'cover')
+  assert.equal(deck.slides[0].subtitle, '一')
+  assert.equal(deck.slides[1].layout, 'bullets')
+  assert.deepEqual(deck.slides[1].bullets, ['二', '三'])
+  assert.equal(deck.slides.at(-1).layout, 'closing')
+})
+
+test('Markdown 标题与列表映射为对应页型', () => {
+  const deck = parseMarkdownDeck('', '# 让会议少一半\n\n用异步决策替代同步例会。\n\n## 问题\n- 工程师每周 6 小时在例会上\n- 决策没有记录\n\n## 方案\n- 会前异步文档 + 24h 评论期\n- 只有分歧项才开会\n', 'zh')
+  assert.equal(deck.title, '让会议少一半')
+  assert.equal(deck.slides[0].layout, 'cover')
+  assert.equal(deck.slides[0].subtitle, '用异步决策替代同步例会。')
+  assert.equal(deck.slides[1].layout, 'bullets')
+  assert.equal(deck.slides[1].title, '问题')
+  assert.deepEqual(deck.slides[1].bullets, ['工程师每周 6 小时在例会上', '决策没有记录'])
+  assert.equal(deck.slides[2].title, '方案')
+  assert.equal(deck.slides.at(-1).layout, 'closing')
+})
+
+test('无标题文档按段落拆要点页', () => {
+  const deck = parseMarkdownDeck('无标题文档', '第一句是封面副标题。第二句是第一页要点。第三句也是第一页要点。\n\n新段落带来新的一页。这里还有第二句。', 'zh')
+  assert.equal(deck.slides[0].layout, 'cover')
+  assert.ok(deck.slides.some((slide) => slide.layout === 'bullets'))
+  assert.equal(deck.slides.at(-1).layout, 'closing')
+})
+
+test('buildDeck 写入 HTML / PPTX / JSON 三件套', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-ppt-core-'))
+  try {
+    const out = buildDeck({
+      title: '测试 Deck',
+      content: '# 测试 Deck\n\n- 要点一\n- 要点二\n',
+      theme: 'velvet',
+      lang: 'en',
+      outputDir: dir,
+      fileName: 'deck-test',
+    })
+    assert.equal(out.ok, true)
+    assert.equal(out.slideCount, 3)
+    assert.equal(out.theme, 'velvet')
+    assert.equal(out.language, 'en')
+    assert.ok(readFileSync(out.htmlPath, 'utf8').includes('slide--cover'))
+    assert.ok(readFileSync(out.htmlPath, 'utf8').includes('#C9A84C'))
+    const pptx = readFileSync(out.pptxPath)
+    assert.equal(pptx.subarray(0, 2).toString('ascii'), 'PK')
+    assert.ok(pptx.includes(Buffer.from('ppt/presentation.xml')))
+    assert.ok(pptx.includes(Buffer.from('ppt/slides/slide1.xml')))
+    const manifest = JSON.parse(readFileSync(out.jsonPath, 'utf8'))
+    assert.equal(manifest.slides.length, out.slideCount)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('buildDeck 默认不覆盖整组三件套，overwrite=true 才显式覆盖', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-ppt-overwrite-'))
+  try {
+    const first = buildDeck({ title: '第一版', content: '第一版内容。', outputDir: dir, fileName: 'deck' })
+    const firstJson = readFileSync(first.jsonPath, 'utf8')
+    const second = buildDeck({ title: '第二版', content: '第二版内容。', outputDir: dir, fileName: 'deck' })
+    assert.equal(first.jsonPath, join(dir, 'deck.json'))
+    assert.equal(second.jsonPath, join(dir, 'deck-1.json'))
+    assert.equal(readFileSync(first.jsonPath, 'utf8'), firstJson, '默认调用不能改写第一版')
+    for (const path of [second.htmlPath, second.pptxPath, second.jsonPath]) assert.equal(existsSync(path), true)
+
+    const partialPptx = join(dir, 'partial.pptx')
+    writeFileSync(partialPptx, 'user-owned')
+    const partial = buildDeck({ title: '部分冲突', content: '不能混写三件套。', outputDir: dir, fileName: 'partial' })
+    assert.equal(partial.htmlPath, join(dir, 'partial-1.html'))
+    assert.equal(readFileSync(partialPptx, 'utf8'), 'user-owned')
+
+    const replaced = buildDeck({ title: '显式覆盖', content: '覆盖后的内容。', outputDir: dir, fileName: 'deck', overwrite: true })
+    assert.equal(replaced.jsonPath, first.jsonPath)
+    assert.equal(JSON.parse(readFileSync(first.jsonPath, 'utf8')).title, '显式覆盖')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('双语界面渲染中英标签', () => {
+  const manifest = {
+    title: 'Bilingual',
+    slides: [{ layout: 'cover', kicker: '开场', title: 'Bilingual', subtitle: 'Test' }],
+  }
+  const theme = resolveTheme('bold')
+  const language = resolveLanguage('bilingual')
+  const html = renderHtml(manifest, theme, language)
+  assert.match(html, /主题 · Theme/)
+  assert.match(html, /开场 · Opening/)
+  assert.match(html, /#E63946/)
+})
+
+test('HTML 播放器：演讲者视图、缩略图总览、Esc 关闭与备注避让', () => {
+  const manifest = { title: 'Player', motion: true, slides: [
+    { layout: 'cover', title: '封' },
+    { layout: 'bullets', title: '页', bullets: ['一'], notes: '备注' },
+  ] }
+  const html = renderHtml(manifest, resolveTheme('data'), resolveLanguage('zh'))
+  assert.match(html, /id="presenter-toggle"/)
+  assert.match(html, /window\.__dshPpt/)
+  assert.match(html, /body\.overview #stage/)
+  assert.match(html, /key === 'Escape'/)
+  assert.match(html, /bottom:64px/)
+  assert.match(html, /id="notes-close"/)
+  assert.match(html, /tabindex="-1"/)
+  assert.match(html, /attr\(data-frame\)/)
+  assert.match(html, /body\.overview \.bullets li/)
+  assert.match(html, /body\.presenting #hud/)
+  assert.match(html, /jumped <= total/)
+  assert.match(html, /ArrowDown/)
+  assert.match(html, /wrapHint/)
+  assert.match(html, /frame\.tabIndex = on \? 0 : -1/)
+  assert.match(html, /URL\.createObjectURL/)
+  assert.match(html, /postMessage/)
+  assert.match(html, /classList.contains\('presenting'\)/)
+  assert.match(html, /classList.contains\('presenting'\)/)
+  assert.match(html, /blank-black/)
+  assert.match(html, /id="pv-cur"/)
+  assert.match(html, /id="thumbs"/)
+  assert.match(html, /id="pclock"/)
+  assert.doesNotMatch(html, /max-width:1120px/)
+})
+
+test('主题预览：SVG 色板卡与对比页覆盖 5 套主题', () => {
+  const svg = renderThemeSvg('data', 'zh')
+  assert.ok(svg.startsWith('<svg'))
+  assert.match(svg, /#7C3AED/)
+  const preview = renderThemePreviewHtml('zh')
+  for (const id of THEME_IDS) assert.ok(preview.includes('theme-' + id), id + ' 缺失')
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-ppt-preview-'))
+  try {
+    const out = buildThemePreview({ outputDir: dir, lang: 'zh' })
+    assert.equal(out.themeCount, 5)
+    assert.ok(existsSync(out.htmlPath))
+    for (const item of out.svgs) assert.ok(existsSync(item.path))
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('buildPptx 是纯 Buffer 且包含全部 OOXML 核心部件', () => {
+  const manifest = {
+    title: 'OOXML',
+    slides: [{ layout: 'bullets', title: '标题', bullets: ['一', '二'] }],
+  }
+  const buf = buildPptx(manifest, resolveTheme('data'), resolveLanguage('zh'))
+  assert.ok(Buffer.isBuffer(buf))
+  for (const name of ['[Content_Types].xml', '_rels/.rels', 'ppt/presentation.xml', 'ppt/slideMasters/slideMaster1.xml', 'ppt/theme/theme1.xml']) {
+    assert.ok(buf.includes(Buffer.from(name)), name + ' 缺失')
+  }
+  assert.ok(buf.length > 0)
+})
+
+test('sanitizeFileName 清理危险字符并去除扩展名', () => {
+  assert.equal(sanitizeFileName('Q3 汇报: 终版?.pptx'), 'Q3-汇报-终版')
+  assert.equal(sanitizeFileName('a/b\\c*<>|?'), 'a-b-c')
+  assert.equal(sanitizeFileName('   '), 'deck')
+})

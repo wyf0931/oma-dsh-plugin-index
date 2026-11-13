@@ -1,0 +1,113 @@
+import { resolve } from 'node:path';
+let enginePromise = null;
+export function getEngine() {
+    if (enginePromise === null) {
+        const engineUrl = new URL('../skills/dsh-ppt/scripts/deck-advanced.mjs', import.meta.url);
+        enginePromise = import(engineUrl.href).then((module) => module)
+            .catch((error) => {
+            enginePromise = null;
+            throw error;
+        });
+    }
+    return enginePromise;
+}
+function asRecord(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+/** Build executors with a shared engine loader; resolve paths separately for each call. */
+export function createPptExecutors(config, loadEngine = getEngine) {
+    return {
+        async themes(rawArgs, exec) {
+            exec?.signal?.throwIfAborted();
+            const args = asRecord(rawArgs);
+            const lang = typeof args.lang === 'string' && args.lang.trim() !== '' ? args.lang.trim() : 'zh';
+            const engine = await loadEngine();
+            exec?.signal?.throwIfAborted();
+            const themes = engine.listThemes(lang);
+            if (args.preview === true) {
+                const cwd = exec?.agent?.session.header.cwd ?? process.cwd();
+                const requested = typeof args.outputDir === 'string' && args.outputDir.trim() !== '' ? args.outputDir.trim() : config.outputDir || '.';
+                const preview = engine.buildThemePreview({
+                    outputDir: resolve(cwd, requested),
+                    lang,
+                    overwrite: args.overwrite === true,
+                });
+                return { ok: true, themes, preview };
+            }
+            return { ok: true, themes };
+        },
+        async create(rawArgs, exec) {
+            exec?.signal?.throwIfAborted();
+            const args = asRecord(rawArgs);
+            if (typeof args.title !== 'string' || args.title.trim() === '')
+                throw new Error('dsh-ppt：title 不能为空');
+            const hasContent = typeof args.content === 'string' && args.content.trim() !== '';
+            const hasSlides = Array.isArray(args.slides) && args.slides.length > 0;
+            if (!hasContent && !hasSlides && !args.template)
+                throw new Error('dsh-ppt：content 不能为空（或用 slides / template 传结构化幻灯片）');
+            const engine = await loadEngine();
+            // Check cancellation after loading and before artifact commit inside the async engine.
+            exec?.signal?.throwIfAborted();
+            const cwd = exec?.agent?.session.header.cwd ?? process.cwd();
+            const outputDir = typeof args.outputDir === 'string' && args.outputDir.trim() !== '' ? args.outputDir.trim() : config.outputDir;
+            return (engine.buildDeckAsync ?? engine.buildDeck)({
+                title: args.title.trim(),
+                content: typeof args.content === 'string' ? args.content : '',
+                slides: hasSlides ? args.slides : undefined,
+                theme: typeof args.theme === 'string' && args.theme.trim() !== '' ? args.theme.trim() : (config.defaultTheme || undefined),
+                lang: typeof args.lang === 'string' && args.lang.trim() !== '' ? args.lang.trim() : (config.defaultLang || undefined),
+                motion: args.motion,
+                outputDir: resolve(cwd, outputDir || '.'),
+                fileName: typeof args.fileName === 'string' && args.fileName.trim() !== '' ? args.fileName.trim() : undefined,
+                overwrite: args.overwrite === true,
+                maxSlides: config.maxSlides,
+                template: args.template,
+                brand: args.brand,
+                dataModel: args.dataModel,
+                cwd,
+                signal: exec?.signal,
+            });
+        },
+        async templates(rawArgs, exec) {
+            exec?.signal?.throwIfAborted();
+            const args = asRecord(rawArgs);
+            const engine = await loadEngine();
+            exec?.signal?.throwIfAborted();
+            return { ok: true, templates: engine.listTemplates(typeof args.lang === 'string' ? args.lang : config.defaultLang || 'zh') };
+        },
+        async edit(rawArgs, exec) {
+            exec?.signal?.throwIfAborted();
+            const engine = await loadEngine();
+            exec?.signal?.throwIfAborted();
+            return engine.editDeck({ ...asRecord(rawArgs), cwd: exec?.agent?.session.header.cwd ?? process.cwd(), signal: exec?.signal });
+        },
+        async undo(rawArgs, exec) {
+            exec?.signal?.throwIfAborted();
+            const engine = await loadEngine();
+            exec?.signal?.throwIfAborted();
+            return engine.undoDeck({ ...asRecord(rawArgs), cwd: exec?.agent?.session.header.cwd ?? process.cwd(), signal: exec?.signal });
+        },
+        async check(rawArgs, exec) {
+            exec?.signal?.throwIfAborted();
+            const engine = await loadEngine();
+            exec?.signal?.throwIfAborted();
+            return (engine.checkDeckAsync ?? engine.checkDeck)({ ...asRecord(rawArgs), cwd: exec?.agent?.session.header.cwd ?? process.cwd(), signal: exec?.signal });
+        },
+        async render(rawArgs, exec) {
+            exec?.signal?.throwIfAborted();
+            const engine = await loadEngine();
+            exec?.signal?.throwIfAborted();
+            return engine.renderDeck({ ...asRecord(rawArgs), cwd: exec?.agent?.session.header.cwd ?? process.cwd(), signal: exec?.signal });
+        },
+        async data(rawArgs, exec) {
+            exec?.signal?.throwIfAborted();
+            const engine = await loadEngine(), args = asRecord(rawArgs);
+            const options = { ...args, cwd: exec?.agent?.session.header.cwd ?? process.cwd(), signal: exec?.signal, allowFiles: true };
+            if (args.action === 'preview')
+                return engine.previewDeckData(options);
+            if (args.action === 'apply')
+                return engine.updateDeckData(options);
+            throw new Error('dsh-ppt：action 需为 preview 或 apply / Use preview or apply');
+        },
+    };
+}

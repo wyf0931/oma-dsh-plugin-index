@@ -1,0 +1,74 @@
+import { registerUpdates } from '@stardustlc/dsh-updates';
+/**
+ * dsh-ppt —— 演示文稿技能 + 工具插件。
+ *
+ * 一句话或一篇 Markdown 文档 → 完整演示文稿三件套：
+ *   deck.html  独立网页放映（无外链）
+ *   deck.pptx  可编辑 PPTX（16:9，原生文字、图片、表格与图表）
+ *   deck.json  支持按页编辑与撤销的工程
+ *
+ * 插件同时注册：
+ *   1. 技能 dsh-ppt（跨 harness 的完整 SOP，SKILL.md 随包分发）
+ *   2. 创建、主题、结构参考、编辑、撤销、检查与可选渲染工具
+ *
+ * 生成引擎按需加载；图片与图表采用 @office-kit/pptx。
+ * 官方 LibreOffice Kit 可选安装，用于读取最终 PPTX 生成 PNG / PDF。
+ *
+ * @module dsh-ppt
+ */
+import { resolvePptConfig } from './config.js';
+import { registerPptSkill } from './skill.js';
+import { buildPptTools } from './tools.js';
+import { PptWorkbench, installPptWorkbench } from './workbench.js';
+import { nativeCoachingModel } from './coaching-model.js';
+import { nativeVisualModel } from './visual-model.js';
+/** cordis 服务注入：apply 里要使用 ctx.tools 与 ctx.skills。 */
+export const inject = ['tools', 'skills'];
+export const name = 'dsh-ppt';
+export function apply(ctx, config = {}) {
+    registerUpdates(ctx, { name: "dsh-ppt" });
+    const resolved = resolvePptConfig(config);
+    const warn = (message) => { ctx.logger?.warn?.(message); };
+    const disposers = [];
+    const workbench = typeof ctx.inject === 'function' ? new PptWorkbench() : undefined;
+    if (workbench) {
+        installPptWorkbench(ctx, workbench);
+        ctx.inject?.(['llm'], host => {
+            workbench.coaching.setModel(nativeCoachingModel(host.llm));
+            host.effect?.(() => () => workbench.coaching.setModel());
+        });
+        ctx.inject?.(['llm', 'attachments'], host => {
+            workbench.visual.setModel(nativeVisualModel(host.llm, host.attachments));
+            host.effect?.(() => () => workbench.visual.setModel());
+        });
+        disposers.push(() => { workbench.coaching.dispose(); workbench.visual.dispose(); });
+    }
+    // 技能注册：单个技能文件缺失只告警，不弄崩宿主启动。
+    try {
+        disposers.push(registerPptSkill(ctx));
+    }
+    catch (error) {
+        warn('[dsh-ppt] 技能加载失败：' + (error instanceof Error ? error.message : String(error)));
+    }
+    for (const definition of buildPptTools(resolved)) {
+        const execute = definition.execute;
+        disposers.push(ctx.tools.register({ ...definition, async execute(args, exec) {
+                const result = await execute(args, exec);
+                try {
+                    await workbench?.remember(result, args, exec);
+                }
+                catch (error) {
+                    warn('[dsh-ppt] 项目索引未更新：' + (error instanceof Error ? error.message : String(error)));
+                }
+                return result;
+            } }));
+    }
+    if (typeof ctx.on === 'function') {
+        ctx.on('dispose', () => {
+            for (const dispose of disposers)
+                dispose();
+        });
+    }
+}
+export { resolvePptConfig, PPT_OUTPUT_DIR_ENV, DEFAULT_MAX_SLIDES, clampInt } from './config.js';
+export { bundledSkillsDir, parseSkillFile, registerPptSkill, SKILL_NAMES } from './skill.js';
