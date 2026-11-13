@@ -1,0 +1,189 @@
+{
+  "format": 1,
+  "title": {
+    "en": "OMA DSH Plugin Index",
+    "zh": "OMA DSH 插件索引"
+  },
+  "description": {
+    "en": "Custom DeepSeek Harness bundles from OMA: skill gating, user story boards, and the Pi subagent.",
+    "zh": "OMA 出品的 DeepSeek Harness 自定义插件：技能门控、用户故事看板与 Pi 子智能体。"
+  },
+  "metadata": {
+    "categories": {
+      "agents": {
+        "title": {
+          "en": "Agents",
+          "zh": "智能体"
+        }
+      },
+      "skills": {
+        "title": {
+          "en": "Skills",
+          "zh": "技能"
+        }
+      },
+      "workflow": {
+        "title": {
+          "en": "Workflow",
+          "zh": "工作流"
+        }
+      }
+    },
+    "labels": {
+      "ui": {
+        "title": {
+          "en": "Ships UI",
+          "zh": "带界面"
+        }
+      },
+      "tools": {
+        "title": {
+          "en": "Adds agent tools",
+          "zh": "增加 Agent 工具"
+        }
+      }
+    }
+  },
+  "plugins": [
+    {
+      "name": "dsh-story-board",
+      "title": {
+        "en": "Story Board",
+        "zh": "用户故事看板"
+      },
+      "description": {
+        "en": "Products, projects, boards, and user stories, with agent tools that create, import, and move them.",
+        "zh": "产品、项目、看板与用户故事，内置创建、导入与移动故事的 Agent 工具。"
+      },
+      "icon": "plugins/dsh-story-board/icon.svg",
+      "author": "wyf0931",
+      "homepage": "https://github.com/wyf0931/oma-dsh-plugin-index/tree/main/plugins/dsh-story-board",
+      "repository": {
+        "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
+        "directory": "plugins/dsh-story-board"
+      },
+      "metadata": {
+        "category": "workflow",
+        "keywords": [
+          "dsh",
+          "deepseek-harness",
+          "story-board",
+          "kanban",
+          "agile",
+          "user-story",
+          "bundle"
+        ],
+        "labels": [
+          "ui",
+          "tools"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.2.0",
+          "publishTimestamp": 1794567281,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
+            "commit": "97d2d9660578646c2220dc942982fa358aa9450a",
+            "path": "plugins/dsh-story-board"
+          }
+        }
+      ]
+    },
+    {
+      "name": "skill-gate",
+      "title": {
+        "en": "Skill Gate",
+        "zh": "技能门控"
+      },
+      "description": {
+        "en": "Per-session skill visibility: choose which skills the model can see from a control under the composer.",
+        "zh": "按会话控制技能可见性：在输入框下方选择模型本次可用的技能。"
+      },
+      "icon": "plugins/skill-gate/icon.svg",
+      "author": "wyf0931",
+      "homepage": "https://github.com/wyf0931/oma-dsh-plugin-index/tree/main/plugins/skill-gate",
+      "repository": {
+        "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
+        "directory": "plugins/skill-gate"
+      },
+      "metadata": {
+        "category": "skills",
+        "keywords": [
+          "dsh",
+          "deepseek-harness",
+          "skills",
+          "bundle"
+        ],
+        "labels": [
+          "ui"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1794567281,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
+            "commit": "97d2d9660578646c2220dc942982fa358aa9450a",
+            "path": "plugins/skill-gate"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.3"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-subagent-pi",
+      "title": {
+        "en": "Pi Subagent",
+        "zh": "Pi 子智能体"
+      },
+      "description": {
+        "en": "Run the Pi coding agent as an isolated subagent, with resumable sessions over Pi RPC.",
+        "zh": "把 Pi 编码智能体作为隔离子智能体运行，基于 Pi RPC 支持会话续接。"
+      },
+      "icon": "plugins/dsh-subagent-pi/icon.svg",
+      "author": "dsh-pi contributors",
+      "homepage": "https://github.com/wyf0931/oma-dsh-plugin-index/tree/main/plugins/dsh-subagent-pi",
+      "repository": {
+        "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
+        "directory": "plugins/dsh-subagent-pi"
+      },
+      "metadata": {
+        "category": "agents",
+        "keywords": [
+          "dsh",
+          "deepseek-harness",
+          "bundle",
+          "pi",
+          "coding-agent",
+          "subagent",
+          "rpc"
+        ],
+        "labels": [
+          "ui",
+          "tools"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.3.0",
+          "publishTimestamp": 1794567281,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
+            "commit": "97d2d9660578646c2220dc942982fa358aa9450a",
+            "path": "plugins/dsh-subagent-pi"
+          },
+          "engines": {
+            "dsh": "^0.2.1-rc.3"
+          }
+        }
+      ]
+    }
+  ]
+}
