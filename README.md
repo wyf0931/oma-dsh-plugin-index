@@ -6,6 +6,10 @@ A plugin index for **DeepSeek Harness**: one JSON file that lists OMA's custom b
 
 The index is self-contained. Every plugin's source is vendored under [`plugins/`](plugins/), and every version is pinned to a commit of this repository, so installing from the index needs no npm publishing and gets exactly the code this repository published.
 
+![Discover listing the three OMA plugins](docs/discover.png)
+
+*Discover lists all three bundles; this profile already links them locally, so each card reads 已安装 (installed).*
+
 ## Plugins
 
 | Plugin | Version | What it does |
