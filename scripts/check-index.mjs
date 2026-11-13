@@ -53,7 +53,8 @@ for (const plugin of index.plugins) {
     }
   }
 
-  const iconPath = path.join(root, dir, path.basename(new URL(plugin.icon).pathname));
+  const iconRelative = configEntry?.icon ?? path.basename(new URL(plugin.icon).pathname);
+  const iconPath = path.join(root, dir, iconRelative);
   if (!fs.existsSync(iconPath)) errors.push(`${where}: icon ${iconPath} does not exist`);
 
   for (const version of plugin.versions) {
