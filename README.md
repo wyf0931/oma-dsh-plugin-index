@@ -6,7 +6,7 @@ A plugin index for **DeepSeek Harness**: one JSON file that lists OMA's custom b
 
 The index is self-contained. Every plugin's source is vendored under [`plugins/`](plugins/), and every version is pinned to a commit of this repository, so installing from the index needs no npm publishing and gets exactly the code this repository published.
 
-![Discover listing the three OMA plugins](docs/discover.png)
+![Discover listing the OMA plugins](docs/discover.png)
 
 *Discover lists the indexed bundles; this profile already links some of them locally, so those cards read 已安装 (installed).*
 
@@ -35,6 +35,8 @@ A jsDelivr mirror is also available if the raw host is slow:
 ```
 https://cdn.jsdelivr.net/gh/wyf0931/oma-dsh-plugin-index@main/index.json
 ```
+
+jsDelivr caches `main`, so it can lag a few minutes behind a release. Purge it after publishing with `curl https://purge.jsdelivr.net/gh/wyf0931/oma-dsh-plugin-index@main/index.json`, or use the raw URL when you need the newest index.
 
 Discover now lists the plugins above. Pick an entry to read its full description, choose a version, and install it.
 
@@ -74,7 +76,7 @@ npm install          # once, for the index validator
 npm run build -- --commit "$(git rev-parse HEAD)"
 ```
 
-5. Commit `index.json` and push.
+5. Commit `index.json` and push, then purge the jsDelivr mirror if you publish one.
 
 The two-commit flow is intentional: the index cannot pin the commit that contains the index itself. The generated `index.json` therefore points at the commit that contains the plugin code, and the following commit only carries the index.
 

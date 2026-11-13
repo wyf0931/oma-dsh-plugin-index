@@ -39,10 +39,10 @@ for (const plugin of index.plugins) {
   listed.add(dir);
 
   const configEntry = declared.get(dir);
+  const pkg = readPackage(dir);
   if (configEntry === undefined) {
     errors.push(`${where}: ${dir} is not declared in market.config.json`);
   } else {
-    const pkg = readPackage(dir);
     if (pkg.name !== plugin.name) errors.push(`${where}: package.json name is ${pkg.name}`);
     if (pkg.version !== current.version) errors.push(`${where}: package.json version is ${pkg.version}`);
     for (const label of configEntry.labels ?? []) {
@@ -51,6 +51,13 @@ for (const plugin of index.plugins) {
     if (configEntry.category !== undefined && plugin.metadata.category !== configEntry.category) {
       errors.push(`${where}: category ${plugin.metadata.category} does not match ${configEntry.category}`);
     }
+  }
+
+  const bundlePatch = pkg.dsh?.bundle?.patch;
+  if (typeof bundlePatch !== 'string' || bundlePatch === '') {
+    errors.push(`${where}: package.json does not declare dsh.bundle.patch`);
+  } else if (!fs.existsSync(path.join(root, dir, bundlePatch))) {
+    errors.push(`${where}: bundle patch ${bundlePatch} does not exist`);
   }
 
   const iconRelative = configEntry?.icon ?? path.basename(new URL(plugin.icon).pathname);

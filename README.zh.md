@@ -6,7 +6,7 @@
 
 索引是自包含的：每个插件的源码都放在本仓库的 [`plugins/`](plugins/) 下，每个版本都固定到本仓库的一个提交。因此安装不依赖 npm 发布，用户装到的就是本仓库发布的那份代码。
 
-![发现页列出 OMA 的三个插件](docs/discover.png)
+![发现页列出 OMA 的插件](docs/discover.png)
 
 *发现页会列出索引中的插件包；截图中的配置文件已经用本地链接安装了其中几个，所以对应卡片显示「已安装」。*
 
@@ -35,6 +35,8 @@ https://raw.githubusercontent.com/wyf0931/oma-dsh-plugin-index/main/index.json
 ```
 https://cdn.jsdelivr.net/gh/wyf0931/oma-dsh-plugin-index@main/index.json
 ```
+
+jsDelivr 会缓存 `main`，发布后可能滞后几分钟。发布后可以执行 `curl https://purge.jsdelivr.net/gh/wyf0931/oma-dsh-plugin-index@main/index.json` 刷新缓存；需要最新索引时直接用 raw 地址。
 
 添加后，发现页就会列出上面的插件。点开条目可以看完整介绍、选择版本并安装。
 
@@ -74,7 +76,7 @@ npm install          # 首次运行，安装索引校验器
 npm run build -- --commit "$(git rev-parse HEAD)"
 ```
 
-5. 提交 `index.json` 并推送。
+5. 提交 `index.json` 并推送；如果使用 jsDelivr 镜像，再执行一次缓存刷新。
 
 两次提交是刻意设计的：索引无法固定到包含索引自身的提交。因此生成的 `index.json` 指向包含插件代码的那个提交，后一次提交只携带索引。
 
