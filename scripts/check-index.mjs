@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Validate index.json with DSH's own format-1 parser, then check the things the
-// parser cannot know: that every pinned commit contains the package, that the
-// working tree still matches that commit, and that display metadata is intact.
+// parser cannot know: that every pinned commit contains the package version it
+// is listed as, that the working tree still matches the current pin, and that
+// display metadata is intact.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,9 +28,9 @@ const declared = new Map(config.plugins.map((plugin) => [plugin.dir.replace(/\/+
 const listed = new Set();
 
 for (const plugin of index.plugins) {
-  const version = plugin.versions[0];
-  const dir = version.source.path;
-  const where = `${plugin.name}@${version.version}`;
+  const current = plugin.versions[0];
+  const dir = current.source.path;
+  const where = `${plugin.name}@${current.version}`;
   if (dir === undefined) {
     errors.push(`${where}: source.path is missing`);
     continue;
@@ -43,7 +44,7 @@ for (const plugin of index.plugins) {
   } else {
     const pkg = readPackage(dir);
     if (pkg.name !== plugin.name) errors.push(`${where}: package.json name is ${pkg.name}`);
-    if (pkg.version !== version.version) errors.push(`${where}: package.json version is ${pkg.version}`);
+    if (pkg.version !== current.version) errors.push(`${where}: package.json version is ${pkg.version}`);
     for (const label of configEntry.labels ?? []) {
       if (!plugin.metadata.labels.includes(label)) errors.push(`${where}: label ${label} is not in the index`);
     }
@@ -55,19 +56,32 @@ for (const plugin of index.plugins) {
   const iconPath = path.join(root, dir, path.basename(new URL(plugin.icon).pathname));
   if (!fs.existsSync(iconPath)) errors.push(`${where}: icon ${iconPath} does not exist`);
 
-  if (version.source.type === 'git') {
-    const { commit } = version.source;
-    if (version.source.url !== repoUrl) errors.push(`${where}: source.url ${version.source.url} is not ${repoUrl}`);
-    if (!commitExists(commit, dir)) {
-      errors.push(`${where}: commit ${commit} does not contain ${dir}/package.json`);
-    } else {
-      const diff = git(['diff', '--name-only', commit, '--', dir]);
-      if (diff !== '') errors.push(`${where}: working tree differs from pinned commit ${commit}:\n${diff}`);
+  for (const version of plugin.versions) {
+    const at = `${plugin.name}@${version.version}`;
+    if (version.source.type !== 'git') {
+      errors.push(`${at}: source must be git`);
+      continue;
     }
+    const sourceDir = version.source.path;
+    if (sourceDir === undefined) {
+      errors.push(`${at}: source.path is missing`);
+      continue;
+    }
+    if (version.source.url !== repoUrl) errors.push(`${at}: source.url ${version.source.url} is not ${repoUrl}`);
+    if (!commitExists(version.source.commit, sourceDir)) {
+      errors.push(`${at}: commit ${version.source.commit} does not contain ${sourceDir}/package.json`);
+      continue;
+    }
+    const pinned = readPackageAt(version.source.commit, sourceDir);
+    if (pinned.name !== plugin.name) errors.push(`${at}: pinned package.json name is ${pinned.name}`);
+    if (pinned.version !== version.version) errors.push(`${at}: pinned package.json version is ${pinned.version}`);
     const target = marketInstallTarget(plugin.name, version);
-    const expected = `git+${repoUrl}.git#${commit}&path:/${dir}`;
-    if (target.spec !== expected) errors.push(`${where}: install spec ${target.spec} is not ${expected}`);
+    const expected = `git+${repoUrl}.git#${version.source.commit}&path:/${sourceDir}`;
+    if (target.spec !== expected) errors.push(`${at}: install spec ${target.spec} is not ${expected}`);
   }
+
+  const diff = git(['diff', '--name-only', current.source.commit, '--', dir]);
+  if (diff !== '') errors.push(`${where}: working tree differs from pinned commit ${current.source.commit}:\n${diff}`);
 }
 
 for (const dir of declared.keys()) {
@@ -82,12 +96,18 @@ if (errors.length > 0) {
 
 console.log(`index.json OK: ${index.plugins.length} plugins, indexed at ${indexUrl}`);
 for (const plugin of index.plugins) {
-  const version = plugin.versions[0];
-  console.log(`  ${plugin.name}@${version.version} -> ${marketInstallTarget(plugin.name, version).spec}`);
+  console.log(`  ${plugin.name}: ${plugin.versions.map((version) => version.version).join(', ')}`);
+  for (const version of plugin.versions) {
+    console.log(`    ${marketInstallTarget(plugin.name, version).spec}`);
+  }
 }
 
 function readPackage(dir) {
   return JSON.parse(fs.readFileSync(path.join(root, dir, 'package.json'), 'utf8'));
+}
+
+function readPackageAt(commit, dir) {
+  return JSON.parse(git(['show', `${commit}:${dir}/package.json`]));
 }
 
 function commitExists(commit, dir) {

@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const config = readJson('market.config.json');
 const rootPackage = readJson('package.json');
+const previousIndex = fs.existsSync(path.join(root, 'index.json')) ? readJson('index.json') : undefined;
 const repoUrl = normalizeRepoUrl(rootPackage.repository?.url);
 const branch = config.index?.branch ?? 'main';
 
@@ -54,6 +55,18 @@ const plugins = config.plugins
     const publishTimestamp = Number(git(['log', '-1', '--format=%ct', '--', dir])) || undefined;
     if (publishTimestamp === undefined) fail(`${target(declared)}: no commit touches ${dir}`);
 
+    const currentVersion = {
+      version: pkg.version,
+      publishTimestamp,
+      source: {
+        type: 'git',
+        url: repoUrl,
+        commit,
+        path: dir
+      },
+      ...(pkg.engines?.dsh === undefined ? {} : { engines: { dsh: pkg.engines.dsh } })
+    };
+
     return {
       order: declared.order ?? position,
       entry: {
@@ -72,19 +85,7 @@ const plugins = config.plugins
           keywords: Array.isArray(pkg.keywords) ? pkg.keywords.filter((keyword) => typeof keyword === 'string') : [],
           labels: declared.labels ?? []
         },
-        versions: [
-          {
-            version: pkg.version,
-            publishTimestamp,
-            source: {
-              type: 'git',
-              url: repoUrl,
-              commit,
-              path: dir
-            },
-            ...(pkg.engines?.dsh === undefined ? {} : { engines: { dsh: pkg.engines.dsh } })
-          }
-        ]
+        versions: mergeVersions(previousIndex, pkg.name, currentVersion)
       }
     };
   })
@@ -106,6 +107,30 @@ fs.writeFileSync(path.join(root, 'index.json'), `${JSON.stringify(index, null, 2
 console.log(`Wrote index.json: ${plugins.length} plugins pinned to ${commit}`);
 for (const plugin of plugins) {
   console.log(`  ${plugin.name}@${plugin.versions[0].version}  ${plugin.homepage}`);
+}
+
+/** Keep every earlier version row from the previous index and prepend the new one. */
+function mergeVersions(previous, name, current) {
+  const old = previous?.plugins?.find((plugin) => plugin?.name === name)?.versions;
+  const kept = Array.isArray(old)
+    ? old.filter((version) => version !== null && typeof version === 'object' && version.version !== current.version)
+    : [];
+  return [current, ...kept].sort((left, right) => compareVersions(right.version, left.version));
+}
+
+/** Ascending SemVer precedence; sufficient for the exact versions this repository publishes. */
+function compareVersions(left, right) {
+  const [leftCore, leftPre] = String(left).split('+', 1)[0].split('-', 2);
+  const [rightCore, rightPre] = String(right).split('+', 1)[0].split('-', 2);
+  const leftParts = leftCore.split('.').map(Number);
+  const rightParts = rightCore.split('.').map(Number);
+  for (let position = 0; position < 3; position += 1) {
+    if (leftParts[position] !== rightParts[position]) return leftParts[position] - rightParts[position];
+  }
+  if (leftPre === rightPre) return 0;
+  if (leftPre === undefined) return 1;
+  if (rightPre === undefined) return -1;
+  return leftPre < rightPre ? -1 : 1;
 }
 
 function readJson(relative) {

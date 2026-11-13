@@ -76,7 +76,7 @@ npm run build -- --commit "$(git rev-parse HEAD)"
 
 The two-commit flow is intentional: the index cannot pin the commit that contains the index itself. The generated `index.json` therefore points at the commit that contains the plugin code, and the following commit only carries the index.
 
-When you update a plugin, bump its `package.json` version, repeat the steps above, and add a new version row to that plugin's `versions` array if you want to keep the old one installable. The generator currently emits the current version only; edit the array by hand to keep history.
+When you update a plugin, bump its `package.json` version and repeat the steps above. The generator keeps every earlier version row from the previous index, so the new version is added alongside the old ones and old versions stay installable.
 
 ## Validation
 
