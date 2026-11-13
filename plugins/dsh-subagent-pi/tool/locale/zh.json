@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Pi 委派工具",
+    "description": "添加 delegate_pi：把独立编码任务交给本机 Pi，之后可按会话 id 继续同一个 Pi 会话。"
+  }
+}

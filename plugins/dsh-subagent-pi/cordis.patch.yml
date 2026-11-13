@@ -1,0 +1,8 @@
+# dsh-subagent-pi bundle layer: inserts the Pi provider and its delegation tool.
+# The provider supplies its own defaults, so a profile only overrides what its
+# deployment needs (see README).
+- insert:
+    - id: subagent-pi
+      name: dsh-subagent-pi
+    - id: tool-subagent-pi
+      name: dsh-subagent-pi/tool

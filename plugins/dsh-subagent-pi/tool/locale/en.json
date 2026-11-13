@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Pi Delegation Tool",
+    "description": "Adds delegate_pi: hand a self-contained coding task to the local Pi agent, and continue the same Pi session later."
+  }
+}

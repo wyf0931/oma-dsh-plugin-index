@@ -1,0 +1,44 @@
+{
+  "name": "skill-gate",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Per-session skill visibility control for DeepSeek Harness: pick which skills the model can see from a control under the composer.",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "skills",
+    "bundle"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0",
+    "dsh": "^0.2.1-rc.3"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  }
+}

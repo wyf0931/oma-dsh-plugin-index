@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Pi Subagent",
+    "description": "Register the local Pi CLI as a subagent provider: one isolated pi process per delegation, with resumable sessions."
+  }
+}

@@ -1,0 +1,6 @@
+# skill-gate: one Host row wrapping the skills service plus the /api routes
+# that back the composer control. The browser half is discovered through the
+# package's dsh.client declaration and needs no row of its own.
+- insert:
+    - id: skill-gate
+      name: skill-gate

@@ -1,0 +1,6 @@
+{
+	"meta": {
+		"title": "Skill Gate",
+		"description": "Per-session skill visibility: pick which skills the model may see from a control under the composer. Unchecked skills stay out of the session's skill catalog; the default keeps every skill enabled."
+	}
+}

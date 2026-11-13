@@ -1,0 +1,6 @@
+# dsh-story-board: one Host row for the store, tools, and /api routes.
+# The browser half is discovered through the package's dsh.client declaration
+# and needs no row of its own.
+- insert:
+    - id: dsh-story-board
+      name: dsh-story-board

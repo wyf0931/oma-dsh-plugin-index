@@ -1,0 +1,96 @@
+{
+  "index": {
+    "title": {
+      "en": "OMA DSH Plugin Index",
+      "zh": "OMA DSH 插件索引"
+    },
+    "description": {
+      "en": "Custom DeepSeek Harness bundles from OMA: skill gating, user story boards, and the Pi subagent.",
+      "zh": "OMA 出品的 DeepSeek Harness 自定义插件：技能门控、用户故事看板与 Pi 子智能体。"
+    }
+  },
+  "categories": {
+    "agents": {
+      "title": {
+        "en": "Agents",
+        "zh": "智能体"
+      }
+    },
+    "skills": {
+      "title": {
+        "en": "Skills",
+        "zh": "技能"
+      }
+    },
+    "workflow": {
+      "title": {
+        "en": "Workflow",
+        "zh": "工作流"
+      }
+    }
+  },
+  "labels": {
+    "ui": {
+      "title": {
+        "en": "Ships UI",
+        "zh": "带界面"
+      }
+    },
+    "tools": {
+      "title": {
+        "en": "Adds agent tools",
+        "zh": "增加 Agent 工具"
+      }
+    }
+  },
+  "plugins": [
+    {
+      "dir": "plugins/dsh-story-board",
+      "order": 1,
+      "category": "workflow",
+      "labels": ["ui", "tools"],
+      "icon": "icon.svg",
+      "author": "wyf0931",
+      "title": {
+        "en": "Story Board",
+        "zh": "用户故事看板"
+      },
+      "description": {
+        "en": "Products, projects, boards, and user stories, with agent tools that create, import, and move them.",
+        "zh": "产品、项目、看板与用户故事，内置创建、导入与移动故事的 Agent 工具。"
+      }
+    },
+    {
+      "dir": "plugins/skill-gate",
+      "order": 2,
+      "category": "skills",
+      "labels": ["ui"],
+      "icon": "icon.svg",
+      "author": "wyf0931",
+      "title": {
+        "en": "Skill Gate",
+        "zh": "技能门控"
+      },
+      "description": {
+        "en": "Per-session skill visibility: choose which skills the model can see from a control under the composer.",
+        "zh": "按会话控制技能可见性：在输入框下方选择模型本次可用的技能。"
+      }
+    },
+    {
+      "dir": "plugins/dsh-subagent-pi",
+      "order": 3,
+      "category": "agents",
+      "labels": ["ui", "tools"],
+      "icon": "icon.svg",
+      "author": "dsh-pi contributors",
+      "title": {
+        "en": "Pi Subagent",
+        "zh": "Pi 子智能体"
+      },
+      "description": {
+        "en": "Run the Pi coding agent as an isolated subagent, with resumable sessions over Pi RPC.",
+        "zh": "把 Pi 编码智能体作为隔离子智能体运行，基于 Pi RPC 支持会话续接。"
+      }
+    }
+  ]
+}
