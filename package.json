@@ -2,7 +2,7 @@
   "name": "oma-dsh-plugin-index",
   "version": "1.0.0",
   "private": true,
-  "description": "A DeepSeek Harness plugin index for OMA's custom bundles: Story Board, Skill Gate, and the Pi subagent.",
+  "description": "A DeepSeek Harness plugin index for OMA's custom bundles: Story Board, Skill Gate, the Pi subagent, and Info System Builder.",
   "license": "MIT",
   "type": "module",
   "repository": {

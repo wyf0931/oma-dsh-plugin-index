@@ -5,8 +5,8 @@
       "zh": "OMA DSH 插件索引"
     },
     "description": {
-      "en": "Custom DeepSeek Harness bundles from OMA: story boards, skill gating, the Pi subagent, info systems, and presentations.",
-      "zh": "OMA 出品的 DeepSeek Harness 自定义插件：用户故事看板、技能门控、Pi 子智能体、信息系统与演示文稿。"
+      "en": "Custom DeepSeek Harness bundles from OMA: story boards, skill gating, the Pi subagent, and info systems.",
+      "zh": "OMA 出品的 DeepSeek Harness 自定义插件：用户故事看板、技能门控、Pi 子智能体与信息系统。"
     }
   },
   "categories": {
@@ -117,25 +117,6 @@
       "description": {
         "en": "Turn one sentence into a running internal information system: AI blueprinting, a visual wizard, and a deterministic renderer.",
         "zh": "一句话生成可运行的内部信息系统：AI 需求蓝图、可视化向导与确定性渲染器。"
-      }
-    },
-    {
-      "dir": "plugins/dsh-ppt",
-      "order": 5,
-      "category": "workflow",
-      "labels": [
-        "ui",
-        "tools"
-      ],
-      "icon": "assets/plugin-icon.webp",
-      "author": "stardustlc",
-      "title": {
-        "en": "PPT",
-        "zh": "演示文稿"
-      },
-      "description": {
-        "en": "Turn source material into a deliverable presentation: a skill plus tools that build HTML decks and export PPTX.",
-        "zh": "给出材料，拿到可交付的演示文稿：技能加工具，生成 HTML 放映并导出 PPTX。"
       }
     }
   ]

@@ -14,15 +14,14 @@
 
 | 插件 | 版本 | 作用 |
 |---|---|---|
-| [`dsh-story-board`](plugins/dsh-story-board/) | 0.2.0 | 产品、项目、看板与用户故事，内置创建、导入与移动故事的 Agent 工具。 |
-| [`skill-gate`](plugins/skill-gate/) | 0.1.0 | 按会话控制技能可见性：在输入框下方选择模型本次可用的技能。 |
-| [`dsh-subagent-pi`](plugins/dsh-subagent-pi/) | 0.3.0 | 把 [Pi](https://github.com/earendil-works/pi-coding-agent) 编码智能体作为隔离子智能体运行，基于 Pi RPC 支持会话续接。 |
-| [`dsh-info-system-builder`](plugins/dsh-info-system-builder/) | 1.0.0 | 一句话生成可运行的内部信息系统：AI 需求蓝图、可视化向导与确定性渲染器。 |
-| [`dsh-ppt`](plugins/dsh-ppt/) | 0.20.5 | 给出材料，拿到可交付的演示文稿：技能加工具，生成 HTML 放映并导出 PPTX。 |
+| [`dsh-story-board`](plugins/dsh-story-board/) | 0.2.1 | 产品、项目、看板与用户故事，内置创建、导入与移动故事的 Agent 工具。 |
+| [`skill-gate`](plugins/skill-gate/) | 0.1.1 | 按会话控制技能可见性：在输入框下方选择模型本次可用的技能。 |
+| [`dsh-subagent-pi`](plugins/dsh-subagent-pi/) | 0.3.1 | 把 [Pi](https://github.com/earendil-works/pi-coding-agent) 编码智能体作为隔离子智能体运行，基于 Pi RPC 支持会话续接。 |
+| [`dsh-info-system-builder`](plugins/dsh-info-system-builder/) | 1.0.1 | 一句话生成可运行的内部信息系统：AI 需求蓝图、可视化向导与确定性渲染器。 |
 
 ## 添加索引
 
-1. 把 DSH 更新到支持插件索引的版本（本索引在 `0.2.2-rc.1` 上验证；插件要求 DSH `^0.2.1-rc.3`）。
+1. 把 DSH 更新到支持插件索引的版本（本索引在 `0.2.2-rc.5` 上验证；插件要求 DSH `^0.2.2-rc.5`）。
 2. 打开侧边栏的 **插件** 页面。如果 **实验性插件** 里的 **自定义插件索引** 还没打开，先打开它。
 3. 进入 **发现** 标签，点 **添加索引源**，粘贴：
 

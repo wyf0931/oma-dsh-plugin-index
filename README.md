@@ -14,15 +14,14 @@ The index is self-contained. Every plugin's source is vendored under [`plugins/`
 
 | Plugin | Version | What it does |
 |---|---|---|
-| [`dsh-story-board`](plugins/dsh-story-board/) | 0.2.0 | Products, projects, boards, and user stories, with agent tools that create, import, and move them. |
-| [`skill-gate`](plugins/skill-gate/) | 0.1.0 | Per-session skill visibility: choose which skills the model can see from a control under the composer. |
-| [`dsh-subagent-pi`](plugins/dsh-subagent-pi/) | 0.3.0 | Run the [Pi](https://github.com/earendil-works/pi-coding-agent) coding agent as an isolated subagent, with resumable sessions over Pi RPC. |
-| [`dsh-info-system-builder`](plugins/dsh-info-system-builder/) | 1.0.0 | Turn one sentence into a running internal information system: AI blueprinting, a visual wizard, and a deterministic renderer. |
-| [`dsh-ppt`](plugins/dsh-ppt/) | 0.20.5 | Turn source material into a deliverable presentation: a skill plus tools that build HTML decks and export PPTX. |
+| [`dsh-story-board`](plugins/dsh-story-board/) | 0.2.1 | Products, projects, boards, and user stories, with agent tools that create, import, and move them. |
+| [`skill-gate`](plugins/skill-gate/) | 0.1.1 | Per-session skill visibility: choose which skills the model can see from a control under the composer. |
+| [`dsh-subagent-pi`](plugins/dsh-subagent-pi/) | 0.3.1 | Run the [Pi](https://github.com/earendil-works/pi-coding-agent) coding agent as an isolated subagent, with resumable sessions over Pi RPC. |
+| [`dsh-info-system-builder`](plugins/dsh-info-system-builder/) | 1.0.1 | Turn one sentence into a running internal information system: AI blueprinting, a visual wizard, and a deterministic renderer. |
 
 ## Add the index
 
-1. Update DSH to a version that supports plugin indexes (this index is tested with `0.2.2-rc.1`; the plugins require DSH `^0.2.1-rc.3`).
+1. Update DSH to a version that supports plugin indexes (this index is tested with `0.2.2-rc.5`; the plugins require DSH `^0.2.2-rc.5`).
 2. Open **Plugins** in the Web sidebar, then switch on **Custom plugin indexes** under **Experimental plugins** if it is off.
 3. Open the **Discover** tab, click **Add index source**, and paste:
 
