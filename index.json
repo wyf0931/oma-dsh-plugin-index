@@ -5,8 +5,8 @@
     "zh": "OMA DSH 插件索引"
   },
   "description": {
-    "en": "Custom DeepSeek Harness bundles from OMA: story boards, skill gating, the Pi subagent, info systems, and presentations.",
-    "zh": "OMA 出品的 DeepSeek Harness 自定义插件：用户故事看板、技能门控、Pi 子智能体、信息系统与演示文稿。"
+    "en": "Custom DeepSeek Harness bundles from OMA: story boards, skill gating, the Pi subagent, and info systems.",
+    "zh": "OMA 出品的 DeepSeek Harness 自定义插件：用户故事看板、技能门控、Pi 子智能体与信息系统。"
   },
   "metadata": {
     "categories": {
@@ -85,7 +85,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
-            "commit": "2ade312b4c2174e1c8fac9113e20a2b8b9a3cf2f",
+            "commit": "4f41cf0ad3c192400e46f76c3cc702fd4a88fedd",
             "path": "plugins/dsh-story-board"
           },
           "engines": {
@@ -140,7 +140,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
-            "commit": "2ade312b4c2174e1c8fac9113e20a2b8b9a3cf2f",
+            "commit": "4f41cf0ad3c192400e46f76c3cc702fd4a88fedd",
             "path": "plugins/skill-gate"
           },
           "engines": {
@@ -202,7 +202,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
-            "commit": "2ade312b4c2174e1c8fac9113e20a2b8b9a3cf2f",
+            "commit": "4f41cf0ad3c192400e46f76c3cc702fd4a88fedd",
             "path": "plugins/dsh-subagent-pi"
           },
           "engines": {
@@ -256,76 +256,11 @@
           "source": {
             "type": "git",
             "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
-            "commit": "2ade312b4c2174e1c8fac9113e20a2b8b9a3cf2f",
+            "commit": "4f41cf0ad3c192400e46f76c3cc702fd4a88fedd",
             "path": "plugins/dsh-info-system-builder"
           },
           "engines": {
             "dsh": "^0.2.2-rc.5"
-          }
-        }
-      ]
-    },
-    {
-      "name": "dsh-ppt",
-      "title": {
-        "en": "PPT",
-        "zh": "演示文稿"
-      },
-      "description": {
-        "en": "Turn source material into a deliverable presentation: a skill plus tools that build HTML decks and export PPTX.",
-        "zh": "给出材料，拿到可交付的演示文稿：技能加工具，生成 HTML 放映并导出 PPTX。"
-      },
-      "icon": "plugins/dsh-ppt/assets/plugin-icon.webp",
-      "author": "stardustlc",
-      "homepage": "https://github.com/wyf0931/oma-dsh-plugin-index/tree/main/plugins/dsh-ppt",
-      "repository": {
-        "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
-        "directory": "plugins/dsh-ppt"
-      },
-      "metadata": {
-        "category": "workflow",
-        "keywords": [
-          "dsh",
-          "deepseek-harness",
-          "dsh-plugin",
-          "plugin",
-          "skills",
-          "ppt",
-          "pptx",
-          "presentation",
-          "slides",
-          "html"
-        ],
-        "labels": [
-          "ui",
-          "tools"
-        ]
-      },
-      "versions": [
-        {
-          "version": "0.20.6",
-          "publishTimestamp": 1795154937,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
-            "commit": "2ade312b4c2174e1c8fac9113e20a2b8b9a3cf2f",
-            "path": "plugins/dsh-ppt"
-          },
-          "engines": {
-            "dsh": "^0.2.2-rc.5"
-          }
-        },
-        {
-          "version": "0.20.5",
-          "publishTimestamp": 1794567578,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
-            "commit": "aa1ebb5542d994b5935476fa1ca91c21b76c03d9",
-            "path": "plugins/dsh-ppt"
-          },
-          "engines": {
-            "dsh": ">=0.2.1-rc.3"
           }
         }
       ]
