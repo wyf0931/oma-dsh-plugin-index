@@ -46,7 +46,12 @@ window.__ModuleLoader__.load({
 .sg-row:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .sg-row:disabled{opacity:.5;cursor:default}
 .sg-check{flex:none;width:16px;height:16px;margin-top:1px;border-radius:4px;border:1.5px solid var(--dsw-alias-border-l3);background:transparent;display:inline-flex;align-items:center;justify-content:center;color:transparent;transition:background-color var(--ds-transition-duration,.2s) var(--ds-ease-in-out,ease-in-out),border-color var(--ds-transition-duration,.2s) var(--ds-ease-in-out,ease-in-out),color var(--ds-transition-duration,.2s) var(--ds-ease-in-out,ease-in-out)}
-.sg-row-on .sg-check{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-primary-foreground)}
+.sg-row-on .sg-check,.sg-row-mixed .sg-check{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-primary-foreground)}
+.sg-master-wrap{padding:6px 0;border-bottom:1px solid var(--dsw-alias-border-l2)}
+.sg-master .sg-name{font-family:inherit;font-size:12px;font-weight:600}
+.sg-master .sg-check{margin-top:0}
+.sg-master-state{flex:none;font-size:10px;color:var(--dsw-alias-label-tertiary);border:1px solid var(--dsw-alias-border-l2);border-radius:4px;padding:0 5px;line-height:1.6;white-space:nowrap}
+.sg-row-mixed .sg-master-state{color:var(--color-blue-500);border-color:currentColor}
 .sg-row-off .sg-name{color:var(--dsw-alias-label-secondary)}
 .sg-main{min-width:0;flex:1}
 .sg-name{font-family:var(--ds-font-family-code,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-primary);overflow-wrap:anywhere}
@@ -72,6 +77,12 @@ window.__ModuleLoader__.load({
 				search: "Search skills…",
 				close: "Close",
 				enableAll: "Enable all",
+				allSkills: "All skills",
+				masterAll: "All on",
+				masterBuiltin: "Built-in only",
+				masterNone: "None",
+				masterPartial: "Partial",
+				masterHint: "Quick cycle: all → built-in only → none → all. “Built-in only” keeps bundled, custom, and runtime skills, and unchecks the user and project skills.",
 				hintRestricted: "Unchecked skills stay out of this session's catalog: the model cannot see or load them, and /name does nothing. Skills appearing later stay unchecked.",
 				hintDefault: "Default: every available skill is enabled for this session.",
 				empty: "No skills are available for this directory yet.",
@@ -97,6 +108,12 @@ window.__ModuleLoader__.load({
 				search: "搜索技能…",
 				close: "关闭",
 				enableAll: "全部启用",
+				allSkills: "全部技能",
+				masterAll: "已全选",
+				masterBuiltin: "仅内置",
+				masterNone: "全不选",
+				masterPartial: "部分",
+				masterHint: "快捷切换：全部 → 仅内置 → 全不选 → 全部。“仅内置”保留内置、自定义与运行时技能，取消用户和项目技能。",
 				hintRestricted: "未勾选的技能不会进入本会话的技能目录：模型不可见、无法通过 skill 工具或 /名称 调用；之后新增的技能也默认不启用。",
 				hintDefault: "当前为默认状态：本会话启用全部可用技能。",
 				empty: "当前目录还没有可用技能。",
@@ -124,6 +141,38 @@ window.__ModuleLoader__.load({
 			bundled: "srcBundled",
 			runtime: "srcRuntime"
 		};
+
+		// The quick cycle keeps everything that ships with DSH or the profile
+		// (bundled, custom, runtime) and clears the skills that belong to the
+		// user's own roots or to the current project.
+		const USER_PROJECT_SOURCES = new Set(["project-dsh", "project-agents", "user-dsh", "user-agents"]);
+		const isBuiltinSkill = (skill) => USER_PROJECT_SOURCES.has(skill?.source) !== true;
+
+		/** Compare two name arrays or sets as sets. */
+		function sameNames(left, right) {
+			const leftList = [...left];
+			const rightSet = new Set(right);
+			return leftList.length === rightSet.size && leftList.every((name) => rightSet.has(name) === true);
+		}
+
+		/**
+		 * The three-stage quick cycle over one skill universe:
+		 * all → built-in only → none → all. Built-in means everything that is
+		 * not a user or project skill. Any other hand-picked selection counts
+		 * as a partial selection and advances to "all", the usual master-checkbox
+		 * behavior. Degenerate levels (no built-in skills, or every skill is
+		 * built-in) are skipped so a click always changes the selection.
+		 */
+		function nextMasterSelection(universe, builtinOnly, current) {
+			const all = new Set(universe);
+			const builtin = new Set(builtinOnly);
+			const active = new Set([...current].filter((name) => all.has(name) === true));
+			const sameAs = (set) => sameNames(active, set);
+			if (sameAs(all)) return sameAs(builtin) === true ? new Set() : builtin;
+			if (active.size === 0) return all;
+			if (sameAs(builtin)) return new Set();
+			return all;
+		}
 
 		function ensureCss() {
 			const tag = `${NS}/styles`;
@@ -162,6 +211,10 @@ window.__ModuleLoader__.load({
 			h("path", { d: "M2.5 6.5l2.4 2.4L9.7 3.6" })
 		);
 
+		const Dash = h("svg", { width: 11, height: 11, viewBox: "0 0 12 12", "aria-hidden": "true", focusable: "false", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" },
+			h("path", { d: "M3 6h6" })
+		);
+
 		const Close = h("svg", { width: 13, height: 13, viewBox: "0 0 14 14", "aria-hidden": "true", focusable: "false", fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round" },
 			h("path", { d: "M3.5 3.5l7 7M10.5 3.5l-7 7" })
 		);
@@ -192,7 +245,7 @@ window.__ModuleLoader__.load({
 		}
 
 		/** The checklist panel anchored below the pill. */
-		function SkillPanel({ anchorRef, data, loading, error, actionError, busyName, resetPending, onToggle, onReset, onRetry, onClose, title, t }) {
+		function SkillPanel({ anchorRef, data, loading, error, actionError, busyName, resetPending, masterState, masterPending, onToggle, onMaster, onReset, onRetry, onClose, title, t }) {
 			const panelRef = useRef(null);
 			const [query, setQuery] = useState("");
 			const [position, setPosition] = useState(undefined);
@@ -258,12 +311,17 @@ window.__ModuleLoader__.load({
 			const total = data?.total ?? 0;
 			const enabledCount = gateSet === null ? total : (data?.skills ?? []).filter((skill) => gateSet.has(skill.name) === true).length;
 			const restricted = gateSet !== null;
+			const masterLabel = masterState === "all" ? t("masterAll") : masterState === "builtin" ? t("masterBuiltin") : masterState === "none" ? t("masterNone") : t("masterPartial");
 
 			const panel = h("div", {
 				ref: panelRef,
 				className: "sg-panel",
 				role: "dialog",
 				"aria-label": title,
+				// Custom overlay that can cover the macOS draggable header when it
+				// flips upward in a short viewport; declare the exclusion region
+				// explicitly (window-drag-regions, DSH 0.2.2-rc.1).
+				"data-window-drag-exclude": true,
 				style: { left: `${String(position.left)}px`, top: `${String(position.top)}px`, width: `${String(position.width)}px`, maxHeight: `${String(position.maxHeight)}px` }
 			},
 				h("div", { className: "sg-head" },
@@ -278,13 +336,29 @@ window.__ModuleLoader__.load({
 				error !== null ? h("div", { className: "sg-note" }, error, h("button", { type: "button", className: "sg-retry", onClick: onRetry }, t("retry"))) :
 				total === 0 ? h("div", { className: "sg-note" }, t("empty")) :
 				h("div", { className: "sg-list" },
+					h("div", { className: "sg-master-wrap" },
+						h("button", {
+							type: "button",
+							className: `sg-row sg-master ${masterState === "all" ? "sg-row-on" : masterState === "none" ? "sg-row-off" : "sg-row-mixed"}`,
+							role: "checkbox",
+							"aria-checked": masterState === "all" ? "true" : masterState === "none" ? "false" : "mixed",
+							"aria-label": t("allSkills"),
+							title: t("masterHint"),
+							disabled: masterPending === true || busyName !== null || resetPending === true,
+							onClick: onMaster
+						},
+							h("span", { className: "sg-check", "aria-hidden": "true" }, masterState === "all" ? Check : masterState === "none" ? undefined : Dash),
+							h("span", { className: "sg-main" }, h("span", { className: "sg-name" }, t("allSkills"))),
+							h("span", { className: "sg-master-state" }, masterLabel)
+						)
+					),
 					groups.map((group) => h(React.Fragment, { key: group.source },
 						h("div", { className: "sg-group", key: `${group.source}:head` }, group.label),
 						group.skills.map((skill) => h(SkillRow, {
 							key: skill.name,
 							skill,
 							enabled: gateSet === null || gateSet.has(skill.name) === true,
-							busy: busyName === skill.name,
+							busy: masterPending === true || busyName === skill.name,
 							onToggle,
 							sourceLabel: group.label
 						}))
@@ -322,6 +396,7 @@ window.__ModuleLoader__.load({
 			const [actionError, setActionError] = useState(null);
 			const [busyName, setBusyName] = useState(null);
 			const [resetPending, setResetPending] = useState(false);
+			const [masterPending, setMasterPending] = useState(false);
 			const pillRef = useRef(null);
 
 			const load = useCallback(async () => {
@@ -386,8 +461,20 @@ window.__ModuleLoader__.load({
 			}, [data, gateSet]);
 			const restricted = gateSet !== null && gateSet !== undefined;
 
+			// Which stage of the master checkbox the current selection is at.
+			// A hand-picked in-between selection reads as "partial".
+			const masterState = useMemo(() => {
+				if (data === null) return "all";
+				const skills = Array.isArray(data.skills) === true ? data.skills : [];
+				const enabled = gateSet === null || gateSet === undefined ? skills.map((skill) => skill.name) : skills.filter((skill) => gateSet.has(skill.name) === true).map((skill) => skill.name);
+				if (enabled.length >= skills.length) return "all";
+				if (enabled.length === 0) return "none";
+				if (sameNames(enabled, skills.filter(isBuiltinSkill).map((skill) => skill.name)) === true) return "builtin";
+				return "partial";
+			}, [data, gateSet]);
+
 			const onToggle = useCallback(async (name) => {
-				if (data === null || busyName !== null) return;
+				if (data === null || busyName !== null || masterPending === true) return;
 				const universe = (data.skills ?? []).map((skill) => skill.name);
 				const current = gateSet === null || gateSet === undefined ? new Set(universe) : new Set(universe.filter((entry) => gateSet.has(entry) === true));
 				if (current.has(name) === true) current.delete(name);
@@ -406,10 +493,37 @@ window.__ModuleLoader__.load({
 				} finally {
 					setBusyName(null);
 				}
-			}, [data, gateSet, busyName, sessionId]);
+			}, [data, gateSet, busyName, masterPending, sessionId]);
+
+			/**
+			 * The master checkbox: one click writes the next stage of the
+			 * all → built-in only → none → all cycle as a single allowlist.
+			 */
+			const onMaster = useCallback(async () => {
+				if (data === null || busyName !== null || resetPending === true || masterPending === true) return;
+				const skills = Array.isArray(data.skills) === true ? data.skills : [];
+				const universe = skills.map((skill) => skill.name);
+				const builtinOnly = skills.filter(isBuiltinSkill).map((skill) => skill.name);
+				const current = gateSet === null || gateSet === undefined ? new Set(universe) : new Set(universe.filter((name) => gateSet.has(name) === true));
+				const next = nextMasterSelection(universe, builtinOnly, current);
+				const nextEnabled = next.size >= universe.length ? null : [...next];
+				setMasterPending(true);
+				setActionError(null);
+				const before = data;
+				setData({ ...data, gate: { ...data.gate, enabled: nextEnabled } });
+				try {
+					const value = await api("set", sessionId === "" ? { enabled: nextEnabled } : { sessionId, enabled: nextEnabled });
+					setData((latest) => latest === null ? latest : { ...latest, gate: { enabled: value.enabled, scope: value.scope } });
+				} catch (cause) {
+					setData(before);
+					setActionError(String(cause?.message ?? cause));
+				} finally {
+					setMasterPending(false);
+				}
+			}, [data, gateSet, busyName, resetPending, masterPending, sessionId]);
 
 			const onReset = useCallback(async () => {
-				if (resetPending === true) return;
+				if (resetPending === true || masterPending === true) return;
 				setResetPending(true);
 				setActionError(null);
 				try {
@@ -420,7 +534,7 @@ window.__ModuleLoader__.load({
 				} finally {
 					setResetPending(false);
 				}
-			}, [resetPending, sessionId]);
+			}, [resetPending, masterPending, sessionId]);
 
 			const pillLabel = started === true
 				? `${t("pill")} · ${t("locked")}`
@@ -452,7 +566,10 @@ window.__ModuleLoader__.load({
 					actionError,
 					busyName,
 					resetPending,
+					masterState,
+					masterPending,
 					onToggle,
+					onMaster,
 					onReset,
 					onRetry: () => {
 						void load();

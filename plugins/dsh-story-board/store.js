@@ -81,12 +81,14 @@ export function normalizeTags(value) {
 	const raw = Array.isArray(value)
 		? value
 		: typeof value === 'string'
-			? value.replace(/[#＃]/g, '').split(/[,，、;；]/)
+			? value.replace(/[#＃]/g, '').replace(/[\[\]【】]/g, '').split(/[,，、;；]/)
 			: [];
 	const seen = new Set();
 	const tags = [];
 	for (const candidate of raw) {
-		const tag = textOf(candidate, 24);
+		// A tag may arrive wrapped in brackets or quotes ("[注册" / "安全]"); strip
+		// the wrapping so the board shows clean chips instead of stray brackets.
+		const tag = textOf(candidate, 24).replace(/^[\[\]【】"'\s]+/, '').replace(/[\[\]【】"'\s]+$/, '');
 		if (tag === '' || seen.has(tag) === true) continue;
 		seen.add(tag);
 		tags.push(tag);
@@ -846,6 +848,15 @@ function importStories(state, body, { clock, at }) {
 	if (projectTargeted !== true) {
 		throw new BadInput('import 需要 projectId、projectKey 或 projectName（不会只创建产品）');
 	}
+	// Product code links / metadata may arrive flat (repoUrl/localPath/description/color)
+	// or nested under `product`; the reverse-engineering import uses the flat form so the
+	// created product is linked to the checkout it was derived from.
+	const code = { ...productCodeOf(body.product), ...productCodeOf(body) };
+	const productColor = PRODUCT_COLORS.includes(body.productColor ?? body.color)
+		? body.productColor ?? body.color
+		: 'blue';
+	const productDescription = body.productDescription ?? body.description;
+
 	let product;
 	if (body.productId !== undefined) product = mustFind(state.products, body.productId, '产品');
 	else if (body.productKey !== undefined) product = state.products.find((entry) => entry.key === textOf(body.productKey, 16).toUpperCase());
@@ -867,24 +878,8 @@ function importStories(state, body, { clock, at }) {
 			id: newId('prd'),
 			key: uniqueKey(state.products, keyOf(body.productKey, name, 'PRD')),
 			name,
-			description: '',
-			color: 'blue',
-			repoUrl: '',
-			localPath: '',
-			createdAt: at,
-			updatedAt: at
-		};
-		state.products.push(product);
-		recordActivity(state, 'product.created', product.name, { productId: product.id }, at);
-	} else if (product === undefined && isObject(body.product) === true) {
-		const name = requireText(body.product.name, '产品名称', 80);
-		const code = productCodeOf(body.product);
-		product = {
-			id: newId('prd'),
-			key: uniqueKey(state.products, keyOf(body.product.key, name, 'PRD')),
-			name,
-			description: textOf(body.product.description, 400),
-			color: 'blue',
+			description: textOf(productDescription, 400),
+			color: productColor,
 			repoUrl: code.repoUrl ?? '',
 			localPath: code.localPath ?? '',
 			createdAt: at,
@@ -892,6 +887,41 @@ function importStories(state, body, { clock, at }) {
 		};
 		state.products.push(product);
 		recordActivity(state, 'product.created', product.name, { productId: product.id }, at);
+	} else if (product === undefined && isObject(body.product) === true) {
+		const name = requireText(body.product.name, '产品名称', 80);
+		product = {
+			id: newId('prd'),
+			key: uniqueKey(state.products, keyOf(body.product.key, name, 'PRD')),
+			name,
+			description: textOf(body.product.description, 400),
+			color: PRODUCT_COLORS.includes(body.product.color) ? body.product.color : 'blue',
+			repoUrl: code.repoUrl ?? '',
+			localPath: code.localPath ?? '',
+			createdAt: at,
+			updatedAt: at
+		};
+		state.products.push(product);
+		recordActivity(state, 'product.created', product.name, { productId: product.id }, at);
+	}
+
+	// Backfill code links on a product that already existed: re-running the
+	// reverse-engineering import against the same checkout links the product
+	// instead of failing or duplicating. Only empty fields are filled, so an
+	// explicit edit always wins over an import.
+	if (product !== undefined && (code.repoUrl !== undefined || code.localPath !== undefined)) {
+		let filled = false;
+		if (code.repoUrl !== undefined && code.repoUrl !== '' && product.repoUrl === '') {
+			product.repoUrl = code.repoUrl;
+			filled = true;
+		}
+		if (code.localPath !== undefined && code.localPath !== '' && product.localPath === '') {
+			product.localPath = code.localPath;
+			filled = true;
+		}
+		if (filled === true) {
+			product.updatedAt = at;
+			recordActivity(state, 'product.updated', product.name, { productId: product.id }, at);
+		}
 	}
 
 	if (project === undefined && (body.projectName !== undefined || body.projectKey !== undefined || isObject(body.project) === true)) {
@@ -919,8 +949,14 @@ function importStories(state, body, { clock, at }) {
 	let board;
 	if (body.boardId !== undefined && body.boardId !== null && body.boardId !== '') {
 		board = boardInProject(state, body.boardId, project.id);
-	} else if (body.boardName !== undefined && textOf(body.boardName, 80) !== '') {
-		const boardName = textOf(body.boardName, 80);
+	} else {
+		// A project import must always land on a real board so the user can click
+		// the project and see a kanban. When the caller omits `boardName`, derive
+		// one from the project name (falling back to a generic label) instead of
+		// silently dumping every story into the un-boarded backlog.
+		const boardName = textOf(body.boardName, 80) !== ''
+			? textOf(body.boardName, 80)
+			: (project.name !== '' ? project.name : '产品现状梳理');
 		board = state.boards.find((entry) => entry.projectId === project.id && entry.name === boardName);
 		if (board === undefined) {
 			board = {

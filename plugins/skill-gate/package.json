@@ -1,6 +1,6 @@
 {
   "name": "skill-gate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Per-session skill visibility control for DeepSeek Harness: pick which skills the model can see from a control under the composer.",
   "keywords": [
@@ -13,7 +13,7 @@
   "type": "module",
   "engines": {
     "node": ">=22.19.0",
-    "dsh": "^0.2.1-rc.3"
+    "dsh": "^0.2.2-rc.5"
   },
   "exports": {
     ".": "./index.js",

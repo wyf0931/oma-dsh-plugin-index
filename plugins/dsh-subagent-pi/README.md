@@ -34,6 +34,8 @@ dsh plugin --profile <profile> add /absolute/path/to/dsh-subagent-pi
 Or install the directory through the Plugins page. Restart DSH if the profile
 does not hot-load bundles. `delegate_pi` then appears for the model.
 
+Requires DSH **0.2.2-rc.5** or a later 0.2.x release.
+
 Requirements: the Pi CLI **1.5.x** (verified against 1.5.2) on `PATH`, or
 configured through `piPath`; Pi's own authentication and models must already
 work for the account running DSH. The history table reads Pi's session files,

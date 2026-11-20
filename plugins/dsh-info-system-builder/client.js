@@ -11,7 +11,7 @@
  */
 
 window.__ModuleLoader__.load({
-  id: 'dsh-info-system-builder',
+  id: '@local/info-system-builder',
   factory(require) {
     const React = require('react');
     const h = React.createElement;

@@ -32,6 +32,8 @@ dsh plugin --profile <profile> add /absolute/path/to/dsh-subagent-pi
 也可以用 Plugins 页面安装该目录。若 profile 不热加载插件，重启 DSH；之后模型即可
 调用 `delegate_pi`。
 
+要求 DSH **0.2.2-rc.5** 或更高的 0.2.x 版本。
+
 要求：`PATH` 上有 Pi CLI **1.5.x**（已按 1.5.2 验证），或用 `piPath` 指定；运行 DSH
 的账号必须已经能用 Pi 的认证与模型。历史表直接读 Pi 的 session 文件，因此要使用与
 provider 相同的 `agentDir` / `sessionDir`。

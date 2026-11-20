@@ -1,6 +1,6 @@
 {
   "name": "dsh-subagent-pi",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Pi coding agent as a DeepSeek Harness subagent provider: one isolated `pi` process per delegation, with resumable sessions over Pi RPC.",
   "keywords": [
     "dsh",
@@ -42,7 +42,7 @@
   ],
   "engines": {
     "node": ">=22.19.0",
-    "dsh": "^0.2.1-rc.3"
+    "dsh": "^0.2.2-rc.5"
   },
   "publishConfig": {
     "access": "public"
@@ -67,22 +67,22 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.5",
-    "@deepseek-ai/dsh-brand": "^0.2.1-rc.3",
-    "@deepseek-ai/dsh-llm": "^0.2.1-rc.3",
-    "@deepseek-ai/dsh-session": "^0.2.1-rc.3",
-    "@deepseek-ai/dsh-subagent": "^0.2.1-rc.3",
-    "@deepseek-ai/dsh-timeout": "^0.2.1-rc.3",
-    "@deepseek-ai/dsh-tools": "^0.2.1-rc.3",
+    "@deepseek-ai/dsh-brand": "^0.2.2-rc.5",
+    "@deepseek-ai/dsh-llm": "^0.2.2-rc.5",
+    "@deepseek-ai/dsh-session": "^0.2.2-rc.5",
+    "@deepseek-ai/dsh-subagent": "^0.2.2-rc.5",
+    "@deepseek-ai/dsh-timeout": "^0.2.2-rc.5",
+    "@deepseek-ai/dsh-tools": "^0.2.2-rc.5",
     "@deepseek-ai/schemastery": "^3.18.5"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "~4.0.6-alpha.1",
-    "@deepseek-ai/dsh-brand": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-llm": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-session": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-subagent": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-timeout": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-tools": "0.2.2-alpha.2",
+    "@deepseek-ai/dsh-brand": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-llm": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-session": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-subagent": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-timeout": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.5",
     "@deepseek-ai/schemastery": "~3.18.6-alpha.1",
     "@types/node": "^22.10.0",
     "tsdown": "^0.22.2",

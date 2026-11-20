@@ -1,6 +1,6 @@
 {
   "name": "dsh-story-board",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "User story boards for DeepSeek Harness: products, projects, boards, stories, and agent tools that create, import, and move them.",
   "keywords": [
@@ -14,6 +14,10 @@
   ],
   "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=22.19.0",
+    "dsh": "^0.2.2-rc.5"
+  },
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
@@ -24,6 +28,7 @@
   "files": [
     "index.js",
     "store.js",
+    "prompt.js",
     "client.js",
     "cordis.patch.yml",
     "locale/*.json",
@@ -34,8 +39,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --test test/store.test.mjs test/host.test.mjs test/client.smoke.mjs",
-    "check": "node --check index.js && node --check store.js && node --check client.js && node --test test/store.test.mjs test/host.test.mjs test/client.smoke.mjs"
+    "test": "node --test test/store.test.mjs test/prompt.test.mjs test/host.test.mjs test/client.smoke.mjs",
+    "check": "node --check index.js && node --check store.js && node --check prompt.js && node --check client.js && node --test test/store.test.mjs test/prompt.test.mjs test/host.test.mjs test/client.smoke.mjs"
   },
   "dsh": {
     "bundle": {

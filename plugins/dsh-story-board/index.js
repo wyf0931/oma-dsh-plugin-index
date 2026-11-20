@@ -12,11 +12,12 @@
  * rather than silently blocking the drop.
  */
 
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { isAbsolute, join, resolve } from 'node:path';
 
 import { PRIORITIES, STATUSES, StoryBoardStore } from './store.js';
+import { composeProjectImportPrompt, deriveProductKey, deriveProductName } from './prompt.js';
 
 /** Cordis plugin id and the loader row id in cordis.patch.yml. */
 export const name = 'dsh-story-board';
@@ -104,15 +105,18 @@ Inputs (at least one of stories / markdown / markdownPath):
 
 Target (the hierarchy is created on demand when names are given):
 - productId | productKey | productName
+- project fields, plus product metadata applied when the product is created or backfilled (repoUrl, localPath, description, color). localPath/repoUrl link the product to the checkout it came from; on an existing product only empty fields are filled.
 - projectId | projectKey | projectName
-- boardId | boardName (a board is created only when boardName is given; otherwise stories go to the project backlog)
+- boardId | boardName (a board is always ensured: pass boardName to name it, otherwise it defaults to the project name so the import never lands board-less)
 
 Behavior:
 - Idempotent: an existing story in the same project with the same key or the same title is updated, not duplicated. Re-import after refining the document is safe.
 - defaultStatus applies to new stories; it defaults to "todo" when a board is targeted and "backlog" otherwise.
 - Returns created/updated counts, the resolved product/project/board, the story list, and WIP warnings.
 
-Prefer structured stories when you already have them in context; use markdownPath when the document was just written to disk.`;
+Prefer structured stories when you already have them in context; use markdownPath when the document was just written to disk.
+
+This is also the landing tool for "import an existing project": explore a local checkout, derive user stories, then call this once with productName/productKey/localPath/repoUrl plus the stories array. Compose that prompt with the panel's "Import product" button or the compose-import route.`;
 
 /** JSON Schema for the read tool. */
 const QUERY_PARAMETERS = {
@@ -205,6 +209,10 @@ const IMPORT_PARAMETERS = {
 		productId: { type: 'string' },
 		productKey: { type: 'string' },
 		productName: { type: 'string', description: 'Creates the product when it does not exist.' },
+		repoUrl: { type: 'string', description: 'Repository link recorded on the created product (or backfilled onto an existing one when empty).' },
+		localPath: { type: 'string', description: 'Local project root recorded on the created product (or backfilled onto an existing one when empty).' },
+		description: { type: 'string', description: 'Description for the created product.' },
+		color: { type: 'string', enum: ['blue', 'green', 'amber', 'red', 'slate'], description: 'Color for the created product.' },
 		projectId: { type: 'string' },
 		projectKey: { type: 'string' },
 		projectName: { type: 'string', description: 'Creates the project under the resolved product when it does not exist.' },
@@ -455,6 +463,45 @@ export function apply(ctx) {
 				}
 				const path = await picker.pick(request.signal);
 				return jsonResponse({ ok: true, value: { path: typeof path === 'string' && path !== '' ? path : null } });
+			} catch (error) {
+				return jsonResponse(failureOf(error));
+			}
+		});
+
+		register('/api/story-board/compose-import', async (request) => {
+			try {
+				const body = await readBody(request);
+				const path = typeof body.path === 'string' ? body.path.trim() : '';
+				if (path === '') {
+					return jsonResponse({ ok: false, error: { code: 'bad_request', message: 'path is required' } });
+				}
+				// Confirm the picked directory really exists before handing the agent a
+				// prompt that points at it; a typo in a typed path would otherwise send
+				// the model exploring a folder that is not there.
+				try {
+					const info = await stat(path);
+					if (info.isDirectory() !== true) {
+						return jsonResponse({ ok: false, error: { code: 'not_a_directory', message: '路径不是一个目录：' + path } });
+					}
+				} catch {
+					return jsonResponse({ ok: false, error: { code: 'path_not_found', message: '路径不存在或不可访问：' + path } });
+				}
+				const productName = typeof body.productName === 'string' && body.productName.trim() !== ''
+					? body.productName.trim()
+					: deriveProductName(path);
+				const productKey = typeof body.productKey === 'string' && body.productKey.trim() !== ''
+					? body.productKey.trim().toUpperCase()
+					: deriveProductKey(path);
+				const prompt = composeProjectImportPrompt({
+					path,
+					productName,
+					productKey,
+					repoUrl: typeof body.repoUrl === 'string' ? body.repoUrl.trim() : '',
+					focus: typeof body.focus === 'string' ? body.focus.trim() : '',
+					maxStories: body.maxStories,
+					language: body.language
+				});
+				return jsonResponse({ ok: true, value: { prompt, productName, productKey, path } });
 			} catch (error) {
 				return jsonResponse(failureOf(error));
 			}

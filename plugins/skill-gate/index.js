@@ -282,18 +282,22 @@ function apply(ctx) {
 	/**
 	 * Every model-invocable skill a session's composition can see, taken
 	 * through the unwrapped registry so the picker always lists the whole
-	 * universe even while a gate is active.
+	 * universe even while a gate is active. `list()` delegates to
+	 * `this.snapshot()`, which is filtered too, so the original `snapshot`
+	 * must be read directly — otherwise an empty allowlist would hide the
+	 * entire catalog and leave no way to re-select anything.
 	 */
 	const universeOf = async (sessionContext) => {
 		const presets = ctx.get("agentPresets");
 		const target = sessionContext.live !== undefined ? presets?.serviceFor?.(sessionContext.live, "skills") ?? registry : registry;
 		const options = { cwd: sessionContext.cwd };
 		if (sessionContext.scope !== undefined) options.scope = sessionContext.scope;
-		const listMethod = wrapped?.originals.list ?? registry.list;
-		const listed = await listMethod.call(target, options);
+		const snapshotMethod = wrapped?.originals.snapshot ?? registry.snapshot;
+		const snapshot = await snapshotMethod.call(target, options);
+		const listed = Array.isArray(snapshot?.skills) === true ? snapshot.skills : [];
 		const skills = [];
 		const seen = new Set();
-		for (const skill of Array.isArray(listed) === true ? listed : []) {
+		for (const skill of listed) {
 			if (skill === null || typeof skill !== "object") continue;
 			if (typeof skill.name !== "string" || SKILL_NAME.test(skill.name) !== true) continue;
 			if (skill.invocation?.modelInvocable === false) continue;

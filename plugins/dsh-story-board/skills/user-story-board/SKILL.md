@@ -91,12 +91,18 @@ DoD 示例（回答用户时可以引用）：代码提交并 CR 通过、自测
 - `markdown`: 文档全文
 - `markdownPath`: 文档路径（**刚写盘时首选**，工具会读文件）
 
-目标层级按名字自动创建：`productName` / `projectName` / `boardName`。**幂等**：同项目内 key 或标题相同的故事会被更新，不会重复创建，所以文档改完可以再导一次。
+目标层级按名字自动创建：`productName` / `projectName` / `boardName`。**幂等**：同项目内 key 或标题相同的故事会被更新，不会重复创建，所以文档改完可以再导一次。**产品代码关联**：传 `repoUrl` / `localPath` / `description` / `color`（扁平参数）即可把产品与本地 checkout / 仓库挂钩；若产品已存在，只回填其中为空的字段，不会覆盖你手动改过的值。
 
 ```json
 {"markdownPath":"user-stories-郊区赶车.md",
  "productName":"滴滴出行","projectName":"郊区赶车场景",
  "boardName":"迭代 1 · 叫车决策"}
+
+// 反向导入一个已有项目（把产品与代码 checkout 关联；建一块板让故事直接落在看板待办列）
+{"productName":"dsh-story-board","productKey":"STORY",
+ "repoUrl":"wyf0931/dsh-story-board","localPath":"/Users/you/code/dsh-story-board",
+ "description":"…","projectName":"产品现状梳理","boardName":"产品现状梳理",
+ "defaultStatus":"backlog","stories":[…]}
 ```
 
 ## 四、标准流程
@@ -127,6 +133,21 @@ DoD 示例（回答用户时可以引用）：代码提交并 CR 通过、自测
 ### D. 单条故事的新建 / 修改
 
 新建用 `create_story`；修改用 `update_story`（只传要改的字段）。故事编号 `US-01` 在项目内稳定递增，**不要为了排序重排编号**；排序用 `priority` 和看板拖动。
+
+### E. 从已有项目反向推导用户故事（导入产品）
+
+用户想把一个**已经存在的本地项目**纳入看板管理时：
+
+1. 确认本地项目路径（面板「产品」Tab 右上角的**导入产品**按钮可以选目录、自动生成提示词，并把提示词预填进一个新 DSH 对话的输入框，按 Enter 发送；用户也可以直接把路径发给你）。
+2. **先实地探查代码，不要凭空编**：读 README、工程清单（package.json / pyproject.toml / go.mod…）、入口与路由、数据模型、前端页面；只读，不要改文件。
+3. 归纳产品定位（2-3 句）、**识别独立的「端 / 视角」**（不同人群使用的不同界面或入口，如 终端用户端 / 运营后台 / 开放平台 / 内部工具；小项目可能只有一个端，别硬拆）与每个端的主要角色，再从**用户价值**出发推导故事。每条故事：
+   - **`asA` / `iWant` / `soThat` 与 `acceptanceCriteria` 必填**——只给 `title` 会得到一张空白卡片（这是最常见的失败）；篇幅紧张时宁可少几条，也要每条写全；
+   - **`epic` 用「端 · 功能域」**（如「用户端 · 账号」「运营端 · 内容管理」），这样看板按 Epic 泳道分组时不同端天然分开，不会混成一列；
+   - **`tags` 带上端名**（如「用户端」「运营端」）再加功能标签；
+   - 遵循 INVEST，**不写纯技术故事**（把"接入 Redis""重构模块"转成用户可感知的价值或并入某条 AC）。
+4. 用 `story_board_import` 落板，并带上产品代码关联：`productName` / `productKey` / `repoUrl` / `localPath` / `description` + `projectName`（常用"产品现状梳理"）+ `stories` 数组。**插件现在保证导入一定有一块看板**：即使你不传 `boardName`，也会用项目名默认建一块板，故事直接落在看板（默认 `todo` 列），用户点项目就能看到看板。建议仍显式传 `boardName` + `defaultStatus:"backlog"`（让故事先落待办列）。**默认所有端放同一块板**，靠 epic 泳道区分；**仅当某个端是真正独立的产品面、且它的故事较多（≥ 6 条）时**，才再调一次 import 为它单开一块板（`boardName` 按该端命名，只把该端的故事放进这次调用），避免看板碎片化。
+5. 用 3 行以内汇报：建了哪个产品/项目、多少条故事、有没有 WIP 提示；提示用户打开「用户故事看板」查看。
+6. 若产品已存在但没关联代码，导入时会**只回填空字段**，不会覆盖用户改过的 `repoUrl` / `localPath`。
 
 ## 五、导入格式（与 user-story-crafter 的模板对齐）
 

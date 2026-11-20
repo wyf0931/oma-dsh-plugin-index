@@ -38,13 +38,16 @@ if (hasSibling) {
 
 /** Build the snapshot the Host route would return, with the demo board. */
 function demoSnapshot() {
+	const clock = () => '2026-11-13T08:00:00.000Z';
 	const state = emptyState();
-	mutate(state, 'seed_demo', {}, { clock: () => '2026-11-13T08:00:00.000Z' });
+	mutate(state, 'seed_demo', {}, { clock });
+	// A project with no board: its row must still navigate to the board tab.
+	mutate(state, 'create_project', { productId: state.products[0].id, name: '无板项目' }, { clock });
 	mutate(state, 'update_product', {
 		id: state.products[0].id,
 		repoUrl: 'https://github.com/wyf0931/dsh-story-board',
 		localPath: '/Users/scott/Documents/dsh-workspace/dsh-story-board'
-	}, { clock: () => '2026-11-13T08:00:00.000Z' });
+	}, { clock });
 	return {
 		...structuredClone(state),
 		meta: {
@@ -92,6 +95,14 @@ test('client panel mounts, switches tabs, and opens a story', { skip: skipReason
 
 	let lastCommand = null;
 	let pickCalls = 0;
+	let startedConversation = null;
+	// The panel fills the composer through the `uiWorkspace` client service; stub
+	// it so the smoke test can assert the composed prompt actually lands there.
+	const uiWorkspaceStub = {
+		startSession(workspaceId, options) {
+			startedConversation = { workspaceId, prompt: options?.prompt ?? '' };
+		}
+	};
 	window.fetch = async (url, options) => {
 		const path = String(url);
 		if (path.includes('api/story-board/state')) {
@@ -104,7 +115,17 @@ test('client panel mounts, switches tabs, and opens a story', { skip: skipReason
 		}
 		if (path.includes('api/story-board/pick-directory')) {
 			pickCalls += 1;
-			return new Response(JSON.stringify({ ok: true, value: { path: pickCalls === 1 ? '/Users/tester/code' : null } }), { headers: { 'content-type': 'application/json' } });
+			// 1st: product editor picks a path; 3rd: the import dialog picks its own.
+			const picked = pickCalls === 1 ? '/Users/tester/code' : pickCalls === 3 ? '/Users/tester/code/demo' : null;
+			return new Response(JSON.stringify({ ok: true, value: { path: picked } }), { headers: { 'content-type': 'application/json' } });
+		}
+		if (path.includes('api/story-board/compose-import')) {
+			const body = JSON.parse(options.body ?? '{}');
+			assert.equal(body.path, '/Users/tester/code/demo');
+			return new Response(JSON.stringify({
+				ok: true,
+				value: { prompt: '探查 ' + body.path + ' 并把用户故事落到看板', productName: 'dsh-story-board', productKey: 'DSHSTORYBOARD', path: body.path }
+			}), { headers: { 'content-type': 'application/json' } });
 		}
 		throw new Error(`unexpected fetch: ${path}`);
 	};
@@ -114,6 +135,9 @@ test('client panel mounts, switches tabs, and opens a story', { skip: skipReason
 	assert.ok(plugin, 'client module registered a factory');
 
 	plugin.apply({
+		get(name) {
+			return name === 'uiWorkspace' ? uiWorkspaceStub : undefined;
+		},
 		effect(fn) {
 			const dispose = fn();
 			registered.push(dispose);
@@ -195,6 +219,45 @@ test('client panel mounts, switches tabs, and opens a story', { skip: skipReason
 	assert.equal(lastCommand?.repoUrl, 'https://github.com/wyf0931/dsh-story-board');
 	assert.equal(lastCommand?.localPath, '/Users/tester/code');
 
+	// Import-product dialog: compose a reverse-engineering prompt for a path.
+	const importButton = [...document.querySelectorAll('.sb-toolbar button')].find((button) => button.textContent.trim() === '导入产品');
+	assert.ok(importButton, 'import product button exists in the products toolbar');
+	importButton.click();
+	await new Promise((resolve) => setTimeout(resolve, 60));
+	assert.match(text(), /从已有项目导入产品/);
+	assert.match(text(), /本地项目路径/);
+	assert.match(text(), /生成提示词/);
+
+	const runButton = () => [...document.querySelectorAll('.sb-modal button')].find((button) => button.textContent.trim() === '在 DSH 中运行');
+	assert.ok(runButton(), 'run-in-DSH button exists');
+	assert.equal(runButton().disabled, true, 'run button is disabled before a prompt is composed');
+
+	const pickImportPath = [...document.querySelectorAll('.sb-modal button')].find((button) => button.textContent.trim() === '选择…');
+	assert.ok(pickImportPath, 'import dialog folder picker exists');
+	pickImportPath.click();
+	await new Promise((resolve) => setTimeout(resolve, 80));
+	const importPathInput = document.querySelector('.sb-modal input[placeholder="/Users/you/code/project"]');
+	assert.equal(importPathInput?.value, '/Users/tester/code/demo');
+	await new Promise((resolve) => setTimeout(resolve, 30));
+
+	const composeButton = [...document.querySelectorAll('.sb-modal button')].find((button) => button.textContent.trim() === '生成提示词');
+	assert.ok(composeButton, 'compose button exists');
+	composeButton.click();
+	await new Promise((resolve) => setTimeout(resolve, 80));
+
+	const promptArea = document.querySelector('.sb-modal textarea.sb-import-prompt');
+	assert.ok(promptArea, 'prompt textarea exists');
+	assert.match(promptArea.value, /探查 \/Users\/tester\/code\/demo/);
+	assert.equal(runButton().disabled, false, 'run button is enabled after composing');
+	assert.match(text(), /复制提示词/);
+
+	// Running hands the prompt to a DSH conversation through uiWorkspace.startSession.
+	runButton().click();
+	await new Promise((resolve) => setTimeout(resolve, 80));
+	assert.match(startedConversation?.prompt ?? '', /探查 \/Users\/tester\/code\/demo/);
+	assert.equal(startedConversation?.workspaceId, undefined, 'opens in the current workspace');
+	assert.equal(document.querySelector('.sb-modal'), null, 'import dialog closed after run');
+
 	// Board tab: five status columns and the demo cards.
 	const boardTab = [...document.querySelectorAll('button')].find((button) => button.textContent.trim().startsWith('看板'));
 	assert.ok(boardTab, 'board tab button exists');
@@ -214,6 +277,22 @@ test('client panel mounts, switches tabs, and opens a story', { skip: skipReason
 	assert.match(text(), /编辑故事/);
 	assert.match(text(), /验收标准/);
 	assert.match(text(), /作为一个/);
+
+	// Close the drawer, then confirm a board-less project row navigates to the
+	// board tab's empty state instead of silently staying on the projects tab.
+	const closeDrawer = document.querySelector('.sb-drawer button[aria-label="Close"]');
+	assert.ok(closeDrawer, 'story drawer close button exists');
+	closeDrawer.click();
+	await new Promise((resolve) => setTimeout(resolve, 60));
+	const projectsTab = [...document.querySelectorAll('button')].find((button) => button.textContent.trim().startsWith('项目'));
+	assert.ok(projectsTab, 'projects tab exists');
+	projectsTab.click();
+	await new Promise((resolve) => setTimeout(resolve, 60));
+	const boardlessRow = [...document.querySelectorAll('.sb-row')].find((row) => row.textContent.includes('无板项目'));
+	assert.ok(boardlessRow, 'board-less project row is listed');
+	boardlessRow.click();
+	await new Promise((resolve) => setTimeout(resolve, 60));
+	assert.match(text(), /这个项目还没有看板/);
 
 	root.unmount();
 	dom.window.close();

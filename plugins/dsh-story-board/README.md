@@ -66,6 +66,7 @@
 
 - **概览**：产品/项目/看板/故事/故事点/阻塞 KPI，状态分布条，WIP 健康度，阻塞清单，最近动态。
 - **产品**：产品卡片（Key、描述、项目/看板/故事数、完成数、代码仓库与本地项目路径），新建/编辑/删除（级联提示）；仓库与本地路径支持手输或系统目录选择，保存后把看板和代码 checkout 关联起来。
+- **导入产品（从已有项目反向推导）**：产品 Tab 右上角「导入产品」— 选一个本地项目目录，自动生成一段「先探查代码、再推导用户故事、最后落板」的提示词，在 DSH 新对话中运行（或复制后手动粘贴），即可把已有项目变成看板上的产品 + 故事。
 - **项目**：按产品过滤的项目列表，目标、日期、看板数、故事数、完成度进度条，一键打开看板。
 - **看板**：五列状态泳道；可按 **Epic / 优先级 / 负责人** 切泳道；搜索 + 负责人/优先级/Epic 筛选；卡片拖拽换列、拖到卡片上插到它前面；列头实时 WIP 计数与超限提示。
 - **故事**：表格视图，搜索与多条件筛选，可直接改状态，点行打开详情。
@@ -80,13 +81,22 @@
 
 仓库支持 `owner/repo`、`git@host:owner/repo`、ssh/https 等写法，保存时归一化为 https 地址；本地路径可直接输入，也可点「选择…」调用系统原生目录选择器。两者都随产品记录持久化，Agent 工具用 `repoUrl` / `localPath` 读写。
 
+### 从已有项目反向推导（导入产品）
+
+针对"项目代码已经写了一堆、但看板上还没有产品/故事"的场景。流程：
+
+1. 产品 Tab → 右上角**导入产品** → 选一个本地项目目录（或手输路径），可填产品名 / Key / 仓库 / 重点关注 / 目标故事数 / 提示词语言。
+2. 点「生成提示词」：Host 的 `/api/story-board/compose-import` 路由会先 `stat` 校验目录存在，再用 `prompt.js` 生成一段结构化提示词（可编辑）。提示词要求模型**先只读探查代码**（README、工程清单、路由、数据模型、前端页面），再归纳产品定位与角色，再从用户价值出发推导故事（INVEST、不写纯技术故事），最后调用 `story_board_import` 落板并带上 `localPath` / `repoUrl`。
+3. 点「在 DSH 中运行」：面板通过 `uiWorkspace.startSession` 打开一个新对话，并把提示词**预填进输入框**（自动跳转过去），确认无误后按 Enter 发送即可，无需复制粘贴；若当前环境不支持，则退化为「复制提示词 + 打开空白对话」。
+4. 模型探查后调用 `story_board_import`，落板的产品自动带上代码关联；若产品已存在，只回填空的 `repoUrl` / `localPath`，不覆盖手动改过的值。
+
 ### Agent 工具
 
 | 工具 | 用途 |
 |---|---|
 | `story_board_query` | 读：`overview` / `products` / `projects` / `boards` / `stories` / `story` / `board`，带过滤 |
 | `story_board_apply` | 写：创建/更新/删除产品、项目、看板、故事；`move_story`；`seed_demo`；`reset_store` |
-| `story_board_import` | 一份 Markdown 或结构化数组一次落板；按名字自动建产品/项目/看板；同 key/标题幂等更新 |
+| `story_board_import` | 一份 Markdown 或结构化数组一次落板；按名字自动建产品/项目/看板；同 key/标题幂等更新；可带 `repoUrl`/`localPath`/`description`/`color` 关联产品（已存在时只回填空字段） |
 
 示例（模型侧）：
 
@@ -118,7 +128,7 @@
 ### 要求
 
 - Node >= 22
-- DSH 0.2.x（本插件在 `0.2.1-rc.3` / `0.2.2-rc.1` 的 Web 壳中验证）
+- DSH `^0.2.2-rc.5`（本插件在 `0.2.2-rc.5` 的 Web 壳中验证；`engines.dsh` 声明为 `^0.2.2-rc.5`，按 semver（含 prerelease）兼容后续 0.2.x）
 - 无第三方运行时依赖，无需构建
 
 ```bash
@@ -158,8 +168,9 @@ $DSH_HOME/story-board/store.json        # 默认 ~/.dsh/story-board/store.json
 
 ```text
 dsh-story-board/
-├── index.js                 # Host：Cordis 插件入口，3 个工具 + 2 条 /api 路由
+├── index.js                 # Host：Cordis 插件入口，3 个工具 + 4 条 /api 路由（state/pick-directory/compose-import/command）
 ├── store.js                 # 领域层：文档模型、命令、WIP、Markdown 导入
+├── prompt.js                # 「从已有项目反向推导」提示词生成（纯函数，可单测）
 ├── client.js                # 浏览器半：main 面板 + sidebar 入口，纯 React
 ├── cordis.patch.yml         # 一行 Loader 条目
 ├── locale/{zh,en}.json      # 插件元数据（标题/描述）

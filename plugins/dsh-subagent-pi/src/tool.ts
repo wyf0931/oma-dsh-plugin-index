@@ -100,14 +100,12 @@ export function apply(ctx: Context, config: Config): void {
       const activation = await ctx.subagents.startActivation({
         provider: providerName,
         label: args.description,
-        request: {
-          parent,
-          prompt: withControl([{ type: 'text', text: args.prompt }], {
-            sessionId,
-            resume: args.session !== undefined,
-          }),
-          ...(args.cwd === undefined ? {} : { cwd: args.cwd }),
-        },
+        parent,
+        prompt: withControl([{ type: 'text', text: args.prompt }], {
+          sessionId,
+          resume: args.session !== undefined,
+        }),
+        ...(args.cwd === undefined ? {} : { cwd: args.cwd }),
         signal: exec.signal,
         delivery: 'parent',
       })

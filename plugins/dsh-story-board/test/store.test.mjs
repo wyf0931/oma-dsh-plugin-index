@@ -11,6 +11,7 @@ import {
 	normalizeLocalPath,
 	normalizeRepoUrl,
 	normalizeState,
+	normalizeTags,
 	parseStoriesMarkdown,
 	priorityOf,
 	statusOf,
@@ -181,6 +182,13 @@ test('move_story orders before a sibling with a midpoint rank', () => {
 	void two;
 });
 
+test('tags drop wrapping brackets and quotes from a bracketed string or tokens', () => {
+	assert.deepEqual(normalizeTags('[注册, 登录, 邀请制, 安全]'), ['注册', '登录', '邀请制', '安全']);
+	assert.deepEqual(normalizeTags(['[会员', '核销', '权限]']), ['会员', '核销', '权限']);
+	// The 8-tag cap still applies after cleaning.
+	assert.equal(normalizeTags('a,b,c,d,e,f,g,h,i,j').length, 8);
+});
+
 test('markdown import reads the user-story-crafter template shape', () => {
 	const parsed = parseStoriesMarkdown(SAMPLE_MARKDOWN);
 	assert.equal(parsed.length, 2);
@@ -238,6 +246,55 @@ test('structured import accepts an array and maps alternate field names', () => 
 	assert.equal(imported.iWant, '分享行程');
 	assert.equal(imported.estimate, 2);
 	assert.equal(imported.acceptanceCriteria.length, 2);
+});
+
+test('reverse-engineering import links the product to the checkout and backfills an existing product', () => {
+	const state = fresh();
+	const first = mutate(state, 'import_stories', {
+		productName: 'dsh-story-board',
+		productKey: 'STORY',
+		repoUrl: 'wyf0931/dsh-story-board',
+		localPath: '/Users/tester/code/dsh-story-board',
+		description: '看板插件',
+		projectName: '产品现状梳理',
+		stories: [{ title: '预估到达时间', asA: '乘客', iWant: '看到到达时间', soThat: '判断来不来得及', acceptanceCriteria: ['Given…When…Then…'] }]
+	}, { clock: clockOf });
+	assert.equal(first.ok, true);
+	const created = state.products[0];
+	assert.equal(created.repoUrl, 'https://github.com/wyf0931/dsh-story-board');
+	assert.equal(created.localPath, '/Users/tester/code/dsh-story-board');
+	assert.equal(created.description, '看板插件');
+
+	// A product created without code links gets them backfilled by a later import.
+	const bare = mutate(state, 'create_product', { name: '另一个产品', key: 'OTHER' }, { clock: clockOf }).value.product;
+	assert.equal(bare.localPath, '');
+	mutate(state, 'import_stories', {
+		productName: '另一个产品',
+		localPath: '/Users/tester/code/other',
+		projectName: '梳理',
+		stories: [{ title: '登录', asA: '用户', iWant: '登录', soThat: '使用', acceptanceCriteria: ['…'] }]
+	}, { clock: clockOf });
+	const backfilled = state.products.find((entry) => entry.id === bare.id);
+	assert.equal(backfilled.localPath, '/Users/tester/code/other');
+	// The already-linked product keeps its own path (an explicit value wins).
+	assert.equal(state.products.find((entry) => entry.id === created.id).localPath, '/Users/tester/code/dsh-story-board');
+});
+
+test('project import without a boardName still creates a board (never board-less)', () => {
+	const state = fresh();
+	const result = mutate(state, 'import_stories', {
+		productName: 'gendu',
+		productKey: 'GENDU',
+		projectName: '产品现状梳理',
+		// No boardName on purpose — the model dropped the optional field.
+		stories: [{ title: '浏览跟读资源', asA: '学员', iWant: '浏览资源', soThat: '找到课', acceptanceCriteria: ['…'] }]
+	}, { clock: clockOf });
+	assert.equal(result.ok, true);
+	// A board is derived from the project name so clicking the project opens a kanban.
+	assert.equal(state.boards.length, 1);
+	assert.equal(state.boards[0].name, '产品现状梳理');
+	// The imported story lands on that board instead of the un-boarded backlog.
+	assert.equal(state.stories[0].boardId, state.boards[0].id);
 });
 
 test('deleting a product cascades to projects, boards, and stories', () => {

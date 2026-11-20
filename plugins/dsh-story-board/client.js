@@ -163,6 +163,34 @@ window.__ModuleLoader__.load({
 				'product.choosing': '选择中…',
 				'product.pickerUnavailable': '当前环境没有系统目录选择器，请直接输入本地路径',
 				'product.codeEmpty': '未关联代码仓库或本地路径',
+				'import.button': '导入产品',
+				'import.title': '从已有项目导入产品',
+				'import.desc': '选择一个本地项目目录，自动生成一段「反向推导用户故事」的提示词，在 DSH 中运行后即可把已有项目变成看板上的产品与故事。',
+				'import.step1': '1 · 选择项目并填写基本信息',
+				'import.step2': '2 · 检查提示词并在 DSH 中运行',
+				'import.path': '本地项目路径',
+				'import.pathHint': '选择目录后自动填入产品名与 Key；也可直接输入路径',
+				'import.repo': '代码仓库（可选）',
+				'import.name': '产品名称',
+				'import.key': '产品 Key',
+				'import.focus': '重点关注（可选）',
+				'import.focusPlaceholder': '例如：只关注结算与优惠券链路',
+				'import.language': '提示词语言',
+				'import.language.zh': '中文',
+				'import.language.en': 'English',
+				'import.compose': '生成提示词',
+				'import.composing': '生成中…',
+				'import.promptLabel': '提示词预览（可编辑）',
+				'import.promptHint': '运行时会以这段文本作为用户消息发给 DSH；它会指示模型先探查代码再落板。',
+				'import.run': '在 DSH 中运行',
+				'import.running': '正在运行…',
+				'import.copy': '复制提示词',
+				'import.copied': '已复制提示词。粘贴到 DSH 对话即可运行。',
+				'import.runDone': '已把提示词填入新的 DSH 对话框，确认后按 Enter 发送即可。',
+				'import.runFallback': '无法自动打开对话，已复制提示词；请粘贴到 DSH 对话运行。',
+				'import.needPath': '请先选择或输入本地项目路径',
+				'import.openBoard': '打开看板',
+				'import.editProduct': '编辑产品',
 				'project.newTitle': '新建项目',
 				'project.editTitle': '编辑项目',
 				'project.name': '项目名称',
@@ -401,6 +429,34 @@ window.__ModuleLoader__.load({
 				'product.choosing': 'Choosing…',
 				'product.pickerUnavailable': 'This environment has no system folder picker; type the path directly',
 				'product.codeEmpty': 'No repository or local path linked',
+				'import.button': 'Import product',
+				'import.title': 'Import a product from an existing project',
+				'import.desc': 'Pick a local project folder, auto-compose a reverse-engineering prompt, and run it in DSH to turn the existing project into a product with user stories on the board.',
+				'import.step1': '1 · Choose a project and fill in the basics',
+				'import.step2': '2 · Review the prompt and run it in DSH',
+				'import.path': 'Local project path',
+				'import.pathHint': 'Picking a folder fills in the product name and key; you can also type a path',
+				'import.repo': 'Repository (optional)',
+				'import.name': 'Product name',
+				'import.key': 'Product key',
+				'import.focus': 'Focus (optional)',
+				'import.focusPlaceholder': 'e.g. focus on checkout and coupons',
+				'import.language': 'Prompt language',
+				'import.language.zh': '中文',
+				'import.language.en': 'English',
+				'import.compose': 'Compose prompt',
+				'import.composing': 'Composing…',
+				'import.promptLabel': 'Prompt preview (editable)',
+				'import.promptHint': 'This text is sent to DSH as the user message; it tells the model to explore the code first, then land the stories.',
+				'import.run': 'Run in DSH',
+				'import.running': 'Running…',
+				'import.copy': 'Copy prompt',
+				'import.copied': 'Prompt copied. Paste it into a DSH conversation to run.',
+				'import.runDone': 'Prompt filled into a new DSH conversation — review it and press Enter to send.',
+				'import.runFallback': 'Could not open a conversation automatically; the prompt is copied — paste it into a DSH conversation.',
+				'import.needPath': 'Pick or type a local project path first',
+				'import.openBoard': 'Open board',
+				'import.editProduct': 'Edit product',
 				'project.newTitle': 'New project',
 				'project.editTitle': 'Edit project',
 				'project.name': 'Project name',
@@ -590,6 +646,7 @@ window.__ModuleLoader__.load({
 .sb-btn-field{height:35px;padding:0 12px;border-radius:7px;font-size:12.5px}
 .sb-input:focus,.sb-textarea:focus{border-color:var(--dsw-alias-border-l4)}
 .sb-textarea{min-height:56px;resize:vertical}
+.sb-import-prompt{min-height:260px;font-family:var(--dsw-alias-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;line-height:1.6;white-space:pre-wrap}
 .sb-input::placeholder,.sb-textarea::placeholder{color:var(--dsw-alias-label-tertiary)}
 .sb-check{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;user-select:none}
 .sb-check input{accent-color:var(--dsw-alias-brand-primary);width:14px;height:14px;margin:0}
@@ -778,8 +835,50 @@ a.sb-code-row:hover{color:var(--dsw-alias-brand-primary)}
 		const api = {
 			state: async () => (await post('state', {})).value,
 			command: async (body) => post('command', body),
-			pickDirectory: async () => (await post('pick-directory', {})).value
+			pickDirectory: async () => (await post('pick-directory', {})).value,
+			composeImport: async (body) => (await post('compose-import', body)).value
 		};
+
+		/**
+		 * Bridge to the DSH conversation runtime, wired in `apply` once `ctx` is
+		 * known. The panel hands the composed prompt to a conversation through the
+		 * `uiWorkspace` client service — `startSession` opens the workspace's blank
+		 * conversation and, given `{ prompt }`, pre-fills its composer draft. That
+		 * is the same "New Session returns to the blank's unsent draft" path the
+		 * GUI uses, so the prompt lands in the input box ready to send with Enter;
+		 * it needs no session remote the panel does not carry.
+		 *
+		 * The caller degrades to copying the prompt only when even this service is
+		 * unavailable, so the flow always finishes.
+		 */
+		let dsh = null;
+		function makeDshBridge(ctx) {
+			const workspace = () => (typeof ctx.get === 'function' ? ctx.get('uiWorkspace') : undefined);
+			return {
+				/**
+				 * Open a DSH conversation with `text` pre-filled in the composer, so
+				 * the user reviews it and presses Enter rather than copy-pasting.
+				 * Resolves true when the conversation was opened, false otherwise.
+				 */
+				async fillConversation(text) {
+					const service = workspace();
+					if (typeof service?.startSession !== 'function') return false;
+					// Absent workspaceId inherits the current/most-recent workspace, so
+					// the prompt opens in the conversation the user is already using.
+					service.startSession(undefined, { prompt: text, whenDraftExists: 'replace' });
+					return true;
+				},
+				/** Best-effort: open a fresh blank conversation for a manual paste. */
+				async openBlankConversation() {
+					try {
+						workspace()?.startSession?.();
+						return true;
+					} catch {
+						return false;
+					}
+				}
+			};
+		}
 
 		/* ------------------------------------------------------------------ */
 		/* Icons                                                              */
@@ -989,6 +1088,7 @@ a.sb-code-row:hover{color:var(--dsw-alias-brand-primary)}
 			if (typeof document === 'undefined') return null;
 			return ReactDOM.createPortal(h('div', {
 				className: 'sb-overlay',
+				'data-window-drag-exclude': '',
 				onMouseDown: (event) => {
 					if (event.target === event.currentTarget) onClose();
 				}
@@ -1021,8 +1121,8 @@ a.sb-code-row:hover{color:var(--dsw-alias-brand-primary)}
 			}, [onClose]);
 			if (typeof document === 'undefined') return null;
 			return ReactDOM.createPortal(h(React.Fragment, null,
-				h('div', { className: 'sb-drawer-overlay', onMouseDown: onClose }),
-				h('aside', { ref: drawerRef, className: 'sb-drawer', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
+				h('div', { className: 'sb-drawer-overlay', 'data-window-drag-exclude': '', onMouseDown: onClose }),
+				h('aside', { ref: drawerRef, className: 'sb-drawer', 'data-window-drag-exclude': '', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
 					h('div', { className: 'sb-drawer-head' },
 						h('div', { style: { flex: 1, minWidth: 0 } },
 							h('h2', { className: 'sb-drawer-title' }, title),
@@ -1219,7 +1319,7 @@ a.sb-code-row:hover{color:var(--dsw-alias-brand-primary)}
 		/* Products                                                           */
 		/* ------------------------------------------------------------------ */
 
-		function Products({ snapshot, onNew, onEdit, onDelete, onManage, onOpenProject, t }) {
+		function Products({ snapshot, onNew, onImport, onEdit, onDelete, onManage, onOpenProject, t }) {
 			const products = snapshot.products;
 			const projects = snapshot.projects;
 			const boards = snapshot.boards;
@@ -1229,7 +1329,9 @@ a.sb-code-row:hover{color:var(--dsw-alias-brand-primary)}
 				return h(Empty, {
 					title: t('product.empty'),
 					hint: t('product.emptyHint'),
-					action: h(Button, { variant: 'primary', icon: Icon.plus(13), onClick: onNew }, t('context.newProduct'))
+					action: h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' } },
+						h(Button, { variant: 'primary', icon: Icon.plus(13), onClick: onNew }, t('context.newProduct')),
+						h(Button, { icon: Icon.folder(13), onClick: onImport }, t('import.button')))
 				});
 			}
 
@@ -1237,6 +1339,7 @@ a.sb-code-row:hover{color:var(--dsw-alias-brand-primary)}
 				h('div', { className: 'sb-toolbar' },
 					h('span', { className: 'sb-toolbar-title' }, `${t('common.products')} · ${String(products.length)}`),
 					h('div', { className: 'sb-spacer' }),
+					h(Button, { size: 'sm', icon: Icon.folder(12), onClick: onImport }, t('import.button')),
 					h(Button, { variant: 'primary', size: 'sm', icon: Icon.plus(12), onClick: onNew }, t('context.newProduct'))),
 				h('div', { className: 'sb-cards' }, products.map((product) => {
 					const productProjects = projects.filter((project) => project.productId === product.id);
@@ -1870,6 +1973,173 @@ a.sb-code-row:hover{color:var(--dsw-alias-brand-primary)}
 							pickError === '' ? undefined : h('span', { className: 'sb-field-error' }, pickError)))));
 		}
 
+		/**
+		 * Import a product from an existing local project: pick a checkout, compose
+		 * a reverse-engineering prompt, then run it in DSH (or copy it for a manual
+		 * paste). The prompt is produced by the Host `compose-import` route so the
+		 * path is validated and the text stays authoritative and testable.
+		 */
+		function ImportProductDialog({ onClose, onDone, notify, t }) {
+			const [localPath, setLocalPath] = useState('');
+			const [productName, setProductName] = useState('');
+			const [productKey, setProductKey] = useState('');
+			const [repoUrl, setRepoUrl] = useState('');
+			const [focus, setFocus] = useState('');
+			const [language, setLanguage] = useState('zh');
+			const [prompt, setPrompt] = useState('');
+			const [picking, setPicking] = useState(false);
+			const [pickError, setPickError] = useState('');
+			const [composing, setComposing] = useState(false);
+			const [running, setRunning] = useState(false);
+			const [error, setError] = useState('');
+
+			const choosePath = async () => {
+				if (picking === true) return;
+				setPicking(true);
+				setPickError('');
+				try {
+					const value = await api.pickDirectory();
+					if (typeof value?.path === 'string' && value.path !== '') setLocalPath(value.path);
+				} catch (cause) {
+					setPickError(cause?.code === 'native_picker_unavailable' ? t('product.pickerUnavailable') : String(cause?.message ?? cause));
+				} finally {
+					setPicking(false);
+				}
+			};
+
+			const compose = async () => {
+				if (localPath.trim() === '') {
+					setError(t('import.needPath'));
+					return;
+				}
+				setComposing(true);
+				setError('');
+				try {
+					const value = await api.composeImport({
+						path: localPath.trim(),
+						productName: productName.trim(),
+						productKey: productKey.trim(),
+						repoUrl: repoUrl.trim(),
+						focus: focus.trim(),
+						language
+					});
+					setPrompt(value.prompt);
+					if (productName.trim() === '') setProductName(value.productName ?? '');
+					if (productKey.trim() === '') setProductKey(value.productKey ?? '');
+				} catch (cause) {
+					setError(String(cause?.message ?? cause));
+				} finally {
+					setComposing(false);
+				}
+			};
+
+			const copyPrompt = async () => {
+				try {
+					await navigator.clipboard.writeText(prompt);
+					notify(t('import.copied'));
+				} catch (cause) {
+					setError(String(cause?.message ?? cause));
+				}
+			};
+
+			const run = async () => {
+				if (prompt.trim() === '' || running === true) return;
+				setRunning(true);
+				setError('');
+				try {
+					if (dsh === null) throw new Error('uiWorkspace_unavailable');
+					const opened = await dsh.fillConversation(prompt);
+					if (opened !== true) throw new Error('uiWorkspace_unavailable');
+					notify(t('import.runDone'));
+					onDone?.();
+				} catch {
+					// Auto-fill is a convenience; degrade to copy + open a blank
+					// conversation so the flow still finishes without the service.
+					let copied = false;
+					try {
+						await navigator.clipboard.writeText(prompt);
+						copied = true;
+					} catch { /* clipboard blocked */ }
+					if (dsh !== null) await dsh.openBlankConversation();
+					notify(copied === true ? t('import.runFallback') : t('import.copied'), 'warn');
+					onDone?.();
+				} finally {
+					setRunning(false);
+				}
+			};
+
+			return h(Modal, {
+				title: t('import.title'),
+				subtitle: t('import.desc'),
+				onClose,
+				wide: true,
+				footer: h(React.Fragment, null,
+					h(Button, { onClick: onClose }, t('common.cancel')),
+					h(Button, { onClick: () => { void copyPrompt(); }, disabled: prompt.trim() === '' }, t('import.copy')),
+					h(Button, {
+						variant: 'primary',
+						icon: Icon.right(12),
+						onClick: () => { void run(); },
+						disabled: prompt.trim() === '' || running === true
+					}, running === true ? t('import.running') : t('import.run')))
+			},
+				h('div', { className: 'sb-form' },
+					h('div', { className: 'sb-form-section' },
+						h('div', { className: 'sb-form-section-head' },
+							h('span', { className: 'sb-form-section-title' }, t('import.step1'))),
+						h('div', { className: 'sb-field' },
+							h('span', { className: 'sb-field-label' }, t('import.path')),
+							h('div', { className: 'sb-input-row' },
+								h('input', {
+									className: 'sb-input',
+									value: localPath,
+									placeholder: t('product.localPathPlaceholder'),
+									onChange: (event) => setLocalPath(event.target.value)
+								}),
+								h(Button, {
+									size: 'sm',
+									className: 'sb-btn-field',
+									icon: Icon.folder(12),
+									onClick: () => { void choosePath(); },
+									disabled: picking === true
+								}, picking === true ? t('product.choosing') : t('product.choosePath'))),
+							h('span', { className: 'sb-field-hint' }, t('import.pathHint')),
+							pickError === '' ? undefined : h('span', { className: 'sb-field-error' }, pickError))),
+					h('div', { className: 'sb-grid-2' },
+						h(Field, { label: t('import.name') },
+							h('input', { className: 'sb-input', value: productName, placeholder: t('product.namePlaceholder'), onChange: (event) => setProductName(event.target.value) })),
+						h(Field, { label: t('import.key'), hint: t('product.keyHint') },
+							h('input', { className: 'sb-input', value: productKey, placeholder: 'DIDI', onChange: (event) => setProductKey(event.target.value.toUpperCase()) }))),
+					h(Field, { label: t('import.repo') },
+						h('input', { className: 'sb-input', value: repoUrl, placeholder: t('product.repoPlaceholder'), onChange: (event) => setRepoUrl(event.target.value) })),
+					h('div', { className: 'sb-grid-2' },
+						h(Field, { label: t('import.focus') },
+							h('input', { className: 'sb-input', value: focus, placeholder: t('import.focusPlaceholder'), onChange: (event) => setFocus(event.target.value) })),
+						h(Field, { label: t('import.language') },
+							h('select', { className: 'sb-input', value: language, onChange: (event) => setLanguage(event.target.value) },
+								h('option', { value: 'zh' }, t('import.language.zh')),
+								h('option', { value: 'en' }, t('import.language.en'))))),
+					h(Button, {
+						variant: 'primary',
+						size: 'sm',
+						icon: Icon.refresh(12),
+						onClick: () => { void compose(); },
+						disabled: composing === true || localPath.trim() === ''
+					}, composing === true ? t('import.composing') : t('import.compose')),
+					h('div', { className: 'sb-form-section' },
+						h('div', { className: 'sb-form-section-head' },
+							h('span', { className: 'sb-form-section-title' }, t('import.step2'))),
+						h(Field, { label: t('import.promptLabel'), hint: t('import.promptHint') },
+							h('textarea', {
+								className: 'sb-textarea sb-import-prompt',
+								value: prompt,
+								placeholder: t('import.compose'),
+								rows: 12,
+								onChange: (event) => setPrompt(event.target.value)
+							}))),
+					error === '' ? undefined : h('div', { className: 'sb-field-error' }, error)));
+		}
+
 		function ProjectDialog({ project, products, defaultProductId, onClose, onSubmit, busy, t }) {
 			const [productId, setProductId] = useState(project?.productId ?? defaultProductId ?? products[0]?.id ?? '');
 			const [name, setName] = useState(project?.name ?? '');
@@ -2233,7 +2503,11 @@ a.sb-code-row:hover{color:var(--dsw-alias-brand-primary)}
 			const gotoProject = useCallback((project) => {
 				const board = (snapshot?.boards ?? []).find((entry) => entry.projectId === project.id);
 				setSelection({ productId: project.productId, projectId: project.id, boardId: board?.id ?? '' });
-				setTab(board === undefined ? 'projects' : 'board');
+				// Always land on the board tab so the click visibly responds. A project
+				// with no board yet (e.g. a fresh import whose stories sit in the
+				// backlog) shows the empty-board state with a create-board action
+				// rather than silently staying put.
+				setTab('board');
 			}, [snapshot]);
 
 			const openStory = useCallback((story) => {
@@ -2498,6 +2772,7 @@ a.sb-code-row:hover{color:var(--dsw-alias-brand-primary)}
 						h(Products, {
 							snapshot,
 							onNew: () => setDialog({ type: 'product' }),
+							onImport: () => setDialog({ type: 'import' }),
 							onEdit: (product) => setDialog({ type: 'product', product }),
 							onDelete: (product) => { void deleteProduct(product); },
 							onManage: (product) => {
@@ -2548,6 +2823,12 @@ a.sb-code-row:hover{color:var(--dsw-alias-brand-primary)}
 					onClose: () => setDialog(null),
 					onSubmit: saveProduct,
 					busy,
+					t
+				}) : undefined,
+				dialog?.type === 'import' ? h(ImportProductDialog, {
+					onClose: () => setDialog(null),
+					onDone: () => setDialog(null),
+					notify,
 					t
 				}) : undefined,
 				dialog?.type === 'project' ? h(ProjectDialog, {
@@ -2605,6 +2886,7 @@ a.sb-code-row:hover{color:var(--dsw-alias-brand-primary)}
 		return {
 			inject: ['slots', 'locale'],
 			apply(ctx) {
+				dsh = makeDshBridge(ctx);
 				const style = ensureCss();
 				if (style !== undefined) {
 					ctx.effect(() => () => {

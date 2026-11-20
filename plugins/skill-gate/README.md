@@ -31,6 +31,7 @@ The default stays exactly DSH's native behavior: **every skill enabled, no restr
 
 - **Native look and feel.** The control adopts the composer bar's borderless tool-row design (chevron, hover wash, 13px medium label) and opens a menu-surface popover that flips upward when the viewport is short.
 - **Grouped, searchable checklist.** Skills are grouped by source root — project `.dsh/skills`, project `.agents/skills`, custom directories, user `.dsh/skills`, user `.agents/skills`, bundled, and runtime — so business skills stand apart from built-ins. Search filters across name, description, and path.
+- **Three-stage master checkbox.** The row above the first group is a one-click switch over the whole catalog: all → built-in only → none → all. *Built-in only* keeps bundled, custom, and runtime skills and clears every user and project skill; the box renders checked, mixed (a dash), or empty to match the selection, and manual per-skill picks can continue from any stage. Hover the row for the cycle hint.
 - **One mental model: checked = visible.** The stored state is an allowlist of exactly what the model sees. Checking everything collapses back to the unrestricted default (`null`), so "back to normal" is always one click ("Enable all") and never drifts.
 - **Enforced at the registry boundary.** Filtering wraps the live `skills` registry, so the durable catalog published at every agent step, the `skill` tool's lookup, the `/name` gesture injection, and the UI's session skill list all agree — no partial views, no stale entries.
 - **Instant, durable, hot-reloadable.** In a new session, changes apply on the model's next step (DSH republishes the catalog automatically) and persist per session id. After the first turn the control locks, keeping a running conversation's skill set fixed. The state file is written atomically and watched, so hand edits and external tooling stay in sync. A *default* scope covers sessions that have no selection yet.
@@ -39,7 +40,7 @@ The default stays exactly DSH's native behavior: **every skill enabled, no restr
 ## Requirements
 
 - Node >= 22.19.0
-- A DSH runtime that satisfies `engines.dsh` (`^0.2.1-rc.3`), with the skills capability mounted (any profile built on `@deepseek-ai/dsh-base`)
+- A DSH runtime that satisfies `engines.dsh` (`^0.2.2-rc.5`), with the skills capability mounted (any profile built on `@deepseek-ai/dsh-base`)
 
 ## Install
 
@@ -59,7 +60,7 @@ The profile links the checkout, so editing `client.js` takes effect after a page
 ## Usage
 
 1. **Open a new session** (before sending the first message). The control reads `Skills · all` (everything enabled), or `Skills N/M` with the glyph and count tinted blue when a restriction exists.
-2. Click it. Uncheck skills that do not belong to this session's business context. Each toggle persists immediately.
+2. Click it. Use the **All skills** checkbox above the groups for the quick cycle — all → built-in only → none — then refine individual skills. Each toggle persists immediately.
 3. The next model step carries the reduced `<available_skills>` catalog; disabled skills are un-loadable by the model and by `/name`.
 4. Click **Enable all** (or re-check everything) to return to the unrestricted default. In a session-less composer the control edits the *default* scope inherited by new sessions.
 5. **Once the conversation has started the pill is disabled** and reads `Skills · locked` — pick skills before the first message. Existing per-session selections can still be reset by editing the state file below.
