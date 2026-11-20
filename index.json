@@ -81,11 +81,11 @@
       "versions": [
         {
           "version": "0.2.1",
-          "publishTimestamp": 1795154937,
+          "publishTimestamp": 1795160722,
           "source": {
             "type": "git",
             "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
-            "commit": "4f41cf0ad3c192400e46f76c3cc702fd4a88fedd",
+            "commit": "74842d161387b11e98cce3b3b2cc7e476ef68d0c",
             "path": "plugins/dsh-story-board"
           },
           "engines": {
@@ -136,11 +136,11 @@
       "versions": [
         {
           "version": "0.1.1",
-          "publishTimestamp": 1795154937,
+          "publishTimestamp": 1795160722,
           "source": {
             "type": "git",
             "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
-            "commit": "4f41cf0ad3c192400e46f76c3cc702fd4a88fedd",
+            "commit": "74842d161387b11e98cce3b3b2cc7e476ef68d0c",
             "path": "plugins/skill-gate"
           },
           "engines": {
@@ -198,11 +198,11 @@
       "versions": [
         {
           "version": "0.3.1",
-          "publishTimestamp": 1795154937,
+          "publishTimestamp": 1795160722,
           "source": {
             "type": "git",
             "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
-            "commit": "4f41cf0ad3c192400e46f76c3cc702fd4a88fedd",
+            "commit": "74842d161387b11e98cce3b3b2cc7e476ef68d0c",
             "path": "plugins/dsh-subagent-pi"
           },
           "engines": {
@@ -252,11 +252,11 @@
       "versions": [
         {
           "version": "1.0.1",
-          "publishTimestamp": 1795154937,
+          "publishTimestamp": 1795160722,
           "source": {
             "type": "git",
             "url": "https://github.com/wyf0931/oma-dsh-plugin-index",
-            "commit": "4f41cf0ad3c192400e46f76c3cc702fd4a88fedd",
+            "commit": "74842d161387b11e98cce3b3b2cc7e476ef68d0c",
             "path": "plugins/dsh-info-system-builder"
           },
           "engines": {
